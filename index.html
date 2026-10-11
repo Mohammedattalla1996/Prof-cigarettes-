@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Prof Cigarettes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="theme-color" content="#a8662b"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon-180.png">
+<title>Prof Cigarettes</title>
+<style>
+:root{--bg:#f6f1ea;--card:#fff;--tx:#2b2118;--mu:#8a7a69;--pr:#a8662b;--prt:#fff;--ok:#2e7d4f;--bad:#c0392b;--bd:#e6dccf;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1b1612;--card:#2a221b;--tx:#f3ebe1;--mu:#a89883;--pr:#d08b4a;--prt:#1b1612;--bd:#3d3228}}
+:root[data-theme="dark"]{--bg:#1b1612;--card:#2a221b;--tx:#f3ebe1;--mu:#a89883;--pr:#d08b4a;--prt:#1b1612;--bd:#3d3228}
+*{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:-apple-system,"Segoe UI",Tahoma,sans-serif;padding-bottom:70px}
+header{padding:12px 14px;font-weight:700;font-size:18px;display:flex;justify-content:space-between;align-items:center}
+header small{color:var(--mu);font-weight:400;font-size:12px}
+main{padding:0 12px 20px}
+nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:var(--card);border-top:1px solid var(--bd);padding-bottom:env(safe-area-inset-bottom,0px);z-index:5}
+nav button{flex:1;border:0;background:none;color:var(--mu);padding:10px 2px;font-size:11px;font-family:inherit}
+nav button b{display:block;font-size:20px}nav button.on{color:var(--pr);font-weight:700}
+input,select,textarea,button{font-family:inherit;font-size:16px}
+input,select,textarea{width:100%;padding:10px;border:1px solid var(--bd);border-radius:10px;background:var(--card);color:var(--tx);margin:4px 0}
+.btn{background:var(--pr);color:var(--prt);border:0;border-radius:10px;padding:11px 14px;font-weight:700}
+.btn.g{background:none;color:var(--pr);border:1px solid var(--pr)}.btn.r{background:var(--bad);color:#fff}.btn.s{padding:6px 10px;font-size:13px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:10px;margin:8px 0}
+.row{display:flex;gap:8px;align-items:center}.sp{justify-content:space-between}.mu{color:var(--mu);font-size:13px}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.it{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:8px;text-align:center;position:relative}
+.it img,.ph{width:100%;height:80px;object-fit:cover;border-radius:8px;background:var(--bd);display:flex;align-items:center;justify-content:center;font-size:28px}
+.it .st{position:absolute;top:6px;left:8px;font-size:18px}
+.chips{display:flex;gap:6px;overflow-x:auto;padding:4px 0}.chips button{white-space:nowrap}
+.th{width:44px;height:44px;border-radius:8px;object-fit:cover;background:var(--bd);display:flex;align-items:center;justify-content:center}
+.ov{position:fixed;inset:0;background:#0009;z-index:20;display:flex;align-items:flex-end}
+.md{background:var(--bg);width:100%;max-height:90%;overflow:auto;border-radius:18px 18px 0 0;padding:14px 14px calc(14px + env(safe-area-inset-bottom,0px))}
+.bar{position:sticky;bottom:64px;background:var(--pr);color:var(--prt);border-radius:14px;padding:12px;margin-top:10px;display:flex;justify-content:space-between;align-items:center;font-weight:700}
+.bad{color:var(--bad)}.ok{color:var(--ok)}
+.pm button{flex:1;padding:10px 4px;border:1px solid var(--bd);background:var(--card);color:var(--tx);border-radius:10px;font-size:14px}.pm button.on{background:var(--pr);color:var(--prt);border-color:var(--pr)}
+.pm{display:flex;flex-wrap:wrap;gap:6px}.pm button{flex:1 1 30%}
+h3{margin:12px 0 4px}
+</style>
+</head>
+<body>
+<header><span>🚬 Prof Cigarettes<br><small id="dt"></small></span><span id="bal" style="text-align:left"></span></header>
+<main id="m"></main>
+<nav id="nv"></nav>
+<div id="ov2" class="ov" style="display:none;z-index:40" onclick="if(event.target===this)cl2()"><div class="md" id="md2"></div></div>
+<div id="ov" class="ov" style="display:none" onclick="if(event.target===this)cl()"><div class="md" id="md"></div></div>
+<script>
+const $=s=>document.querySelector(s);
+const def=()=>({items:[],sups:[],custs:[],sales:[],n:0});
+let db;try{db=JSON.parse(localStorage.getItem('pc')||'')||def()}catch(e){db=def()}
+db.users=db.users||{admin:'admin123',user:'user123'};db.adj=db.adj||[];db.exps=db.exps||[];db.buys=db.buys||[];db.roll=db.roll||{g:0.4,lz:0,ot:0};
+function save(){try{localStorage.setItem('pc',JSON.stringify(db))}catch(e){alert('المساحة ممتلئة، صدّر نسخة احتياطية واحذف صوراً')}}
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,5);
+const f=n=>(Math.round(n*100)/100)+' ₪';
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const find=(a,id)=>db[a].find(x=>x.id===id);
+const day=d=>new Date(d).toLocaleDateString('ar-EG');
+const tm=d=>new Date(d).toLocaleString('ar-EG',{dateStyle:'short',timeStyle:'short'});
+const METH=['كاش','تحويل بنكي','جوال باي','محفظة','أخرى'];
+let tab='sell',cart=[],q='',pm='كاش',mode='now',sel='',role=null,pcs='',pam='';
+const TABS=[['sell','🛒','البيع'],['stock','📦','المخزون'],['cust','👥','الزبائن'],['sup','🚚','الموردين'],['exp','💸','المصروفات'],['rep','📊','التقارير']];
+const debt=c=>c.log.reduce((s,l)=>s+(l.t==='debt'?l.a:-l.a),0);
+const moves=()=>{const a=db.sales.filter(s=>s.m!=='دين').map(s=>({d:s.d,m:s.m,a:s.total,t:'بيع فاتورة #'+s.no}));db.custs.forEach(c=>c.log.filter(l=>l.t==='pay').forEach(l=>a.push({d:l.d,m:l.m||'كاش',a:l.a,t:'سداد دين - '+c.name})));db.adj.forEach(j=>a.push({d:j.d,m:j.m,a:j.delta,t:'تعديل رصيد: '+j.note}));db.exps.filter(e=>e.m).forEach(e=>a.push({d:e.d,m:e.m,a:-e.a,t:'مصروف: '+e.cat+(e.note?' - '+e.note:'')}));db.buys.forEach(b=>a.push({d:b.d,m:b.m,a:-b.total,t:'شراء مستعجل: '+b.name+' ('+b.sup+')'}));return a.sort((x,y)=>y.d-x.d)};
+const cashBal=()=>moves().reduce((s,x)=>s+x.a,0);
+const unit=i=>i.u==='g'?'غ':'قطعة';
+const stk=i=>i.u==='g'&&i.qty>=1000?(i.qty/1000).toFixed(2)+' كغ':i.qty+' '+unit(i);
+let _cb=null;
+function ov2(h){$('#md2').innerHTML=h;$('#ov2').style.display='flex'}
+function cl2(){$('#ov2').style.display='none'}
+function ask(m,fn){_cb=fn;ov2(`<h3>${esc(m)}</h3><div class="row"><button class="btn" style="flex:1" onclick="cl2();_cb&&_cb()">نعم</button><button class="btn g" style="flex:1" onclick="cl2()">إلغاء</button></div>`)}
+function inp(t,v,fn){_cb=fn;ov2(`<h3>${esc(t)}</h3><input id="pi" type="number" inputmode="decimal" value="${v}"><div class="row"><button class="btn" style="flex:1" onclick="const x=parseFloat($('#pi').value);cl2();_cb&&_cb(x)">إضافة</button><button class="btn g" onclick="cl2()">إلغاء</button></div>`);setTimeout(()=>{const e=$('#pi');e&&e.select()},60)}
+window.alert=m=>{const t=document.createElement('div');t.textContent=m;t.style.cssText='position:fixed;top:calc(env(safe-area-inset-top,0px) + 12px);left:12px;right:12px;background:var(--pr);color:var(--prt);padding:12px;border-radius:12px;z-index:60;text-align:center;font-weight:700';document.body.appendChild(t);setTimeout(()=>t.remove(),2600)};
+function cl(){$('#ov').style.display='none'}
+function md(h){$('#md').innerHTML=h;$('#ov').style.display='flex'}
+function R(){
+ if(!role){$('#nv').innerHTML='';$('#bal').innerHTML='';$('#m').innerHTML=vLogin();return}
+ $('#dt').textContent=new Date().toLocaleDateString('ar-EG',{weekday:'long',day:'numeric',month:'long'})+(offOK?' · 🟢 أوفلاين جاهز':' · ⚪ أوفلاين غير جاهز');
+ $('#bal').innerHTML=role==='admin'?'<a onclick="balView()" style="cursor:pointer"><small>الرصيد ›</small><br>'+f(cashBal())+'</a> <button class="btn g s" onclick="menu()">⚙</button>':'<button class="btn g s" onclick="logout()">خروج</button>';
+ $('#nv').innerHTML=TABS.filter(t=>role==='admin'||(t[0]!=='sup'&&t[0]!=='rep'&&t[0]!=='exp')).map(t=>`<button class="${tab===t[0]?'on':''}" onclick="tab='${t[0]}';R()"><b>${t[1]}</b>${t[2]}</button>`).join('');
+ $('#m').innerHTML=({sell:vSell,stock:vStock,cust:vCust,sup:vSup,exp:vExp,rep:vRep})[tab]();
+}
+/* ---------- الدخول والرصيد ---------- */
+function vLogin(){return `<div class="card" style="margin-top:40px;text-align:center"><div style="font-size:48px">🚬</div><h3>Prof Cigarettes</h3><input id="lu" placeholder="اسم المستخدم" autocapitalize="none" autocomplete="username"><input id="lp" type="password" placeholder="كلمة المرور" autocomplete="current-password"><button class="btn" style="width:100%;margin-top:6px" onclick="login()">دخول</button><div class="mu" style="margin-top:10px">${offOK?'🟢 جاهز للعمل بدون إنترنت':'⚪ غير جاهز للأوفلاين بعد، أبقِ الصفحة مفتوحة ثم أعد فتحها'}</div></div>`}
+function login(){const u=$('#lu').value.trim().toLowerCase(),p=$('#lp').value;if(db.users[u]!==undefined&&db.users[u]===p){role=u;tab='sell';R()}else alert('اسم المستخدم أو كلمة المرور غير صحيحة')}
+function logout(){role=null;cart=[];R()}
+function menu(){md(`<h3>الإعدادات</h3><div class="mu">سجائر اللف: وزن السيجارة (غ) ثم سعر السيجارة لكل نوع ورق (اتركه فارغاً ليُحسب من سعر الغرام)</div><input id="ro1" type="number" inputmode="decimal" value="${db.roll.g}"><input id="ro2" type="number" inputmode="decimal" placeholder="سعر سيجارة لزق" value="${db.roll.lz||''}"><input id="ro3" type="number" inputmode="decimal" placeholder="سعر سيجارة أوتومان" value="${db.roll.ot||''}"><h3>كلمات المرور</h3><input id="pa1" type="password" placeholder="كلمة مرور المدير الجديدة"><input id="pa2" type="password" placeholder="كلمة مرور البائع الجديدة"><button class="btn" style="width:100%" onclick="setpw()">حفظ كلمات المرور</button><button class="btn g" style="width:100%;margin-top:8px" onclick="cl();logout()">تسجيل الخروج</button>`)}
+function setpw(){db.roll={g:+$('#ro1').value>0?+$('#ro1').value:0.4,lz:+$('#ro2').value||0,ot:+$('#ro3').value||0};const a=$('#pa1').value,b=$('#pa2').value;if(a)db.users.admin=a;if(b)db.users.user=b;save();cl();alert('تم الحفظ')}
+function balView(fl){const t0=new Date().setHours(0,0,0,0),mv=moves(),ms=METH.map(m=>{const a=mv.filter(x=>x.m===m);return{m,all:a.reduce((s,x)=>s+x.a,0),td:a.filter(x=>x.d>=t0).reduce((s,x)=>s+x.a,0)}});
+ const lst=mv.filter(x=>x.d>=t0&&(!fl||x.m===fl));
+ md(`<h3>تفصيل الرصيد — ${f(cashBal())}</h3><div class="grid">${ms.map(x=>`<div class="card" style="${fl===x.m?'border-color:var(--pr)':''}" onclick="balView('${fl===x.m?'':x.m}')"><div class="mu">${x.m==='كاش'?'💵 ':'📱 '}${x.m}</div><b>${f(x.all)}</b><div class="mu">اليوم ${f(x.td)}</div><button class="btn g s" style="margin-top:6px" onclick="event.stopPropagation();adjForm('${x.m}')">تعديل</button></div>`).join('')}</div><button class="btn g" style="width:100%" onclick="adjRep()">📋 تقرير تعديلات الرصيد</button><h3>حركات اليوم ${fl?'— '+fl:''}</h3>${lst.map(x=>`<div class="card row sp"><div>${esc(x.t)}<div class="mu">${tm(x.d)} · ${x.m}</div></div><b class="${x.a<0?'bad':'ok'}">${x.a>0?'+':''}${f(x.a)}</b></div>`).join('')||'<p class="mu">لا توجد حركات اليوم</p>'}<button class="btn g" style="width:100%" onclick="cl()">إغلاق</button>`)}
+/* ---------- تعديل الرصيد / شراء مستعجل / مصروفات ---------- */
+const curM=m=>moves().filter(x=>x.m===m).reduce((s,x)=>s+x.a,0);
+function adjForm(m){md(`<h3>تعديل رصيد ${m}</h3><div class="mu">الرصيد الحالي ${f(curM(m))}</div><input id="aj1" type="number" inputmode="decimal" placeholder="الرصيد الجديد"><input id="aj2" placeholder="سبب التعديل"><div class="row"><button class="btn" style="flex:1" onclick="doAdj('${m}')">حفظ التعديل</button><button class="btn g" onclick="balView()">رجوع</button></div>`)}
+function doAdj(m){const nv=parseFloat($('#aj1').value);if(isNaN(nv))return alert('أدخل الرصيد الجديد');const b=curM(m),d=Math.round((nv-b)*100)/100;if(!d){balView();return}
+ db.adj.unshift({id:uid(),d:Date.now(),m,delta:d,before:b,after:nv,note:$('#aj2').value.trim()||'بدون سبب'});save();R();balView()}
+function adjRep(){md(`<h3>تقرير تعديلات الرصيد</h3>${db.adj.map(j=>`<div class="card"><div class="row sp"><b>${j.m}</b><b class="${j.delta<0?'bad':'ok'}">${j.delta>0?'+':''}${f(j.delta)}</b></div><div class="mu">${f(j.before)} ← ${f(j.after)}</div><div class="mu">${tm(j.d)} · ${esc(j.note)}</div></div>`).join('')||'<p class="mu">لا توجد تعديلات</p>'}<button class="btn g" style="width:100%" onclick="balView()">رجوع</button>`)}
+function buyForm(){md(`<h3>🛒 شراء مستعجل</h3><select id="b0" onchange="$('#bn').style.display=this.value==='new'?'block':'none'"><option value="new">＋ صنف جديد</option>${db.items.map(i=>`<option value="${i.id}">${esc(i.name)} (${stk(i)})</option>`).join('')}</select><div id="bn"><input id="b1" placeholder="اسم الصنف الجديد"><select id="b2"><option value="p">يُباع بالقطعة</option><option value="g">يُباع بالوزن (غرام)</option></select><input id="b3" type="number" inputmode="decimal" placeholder="سعر البيع (للقطعة أو للغرام)"></div><input id="b4" type="number" inputmode="decimal" placeholder="الكمية المشتراة (قطع أو غرامات)"><input id="b5" type="number" inputmode="decimal" placeholder="إجمالي المبلغ المدفوع"><select id="b6">${METH.map(m=>`<option>${m}</option>`).join('')}</select><input id="b7" placeholder="اسم المورد (اختياري)"><div class="mu">يُخصم المبلغ من رصيد الطريقة المختارة، وتُضاف الكمية للمخزون.</div><div class="row" style="margin-top:8px"><button class="btn" style="flex:1" onclick="doBuy()">حفظ الشراء</button><button class="btn g" onclick="cl()">إغلاق</button></div>`)}
+function doBuy(){const q=+$('#b4').value,t=+$('#b5').value;if(!(q>0)||!(t>0))return alert('أدخل الكمية والمبلغ');let id=$('#b0').value,i;const uc=Math.round(t/q*10000)/10000;
+ if(id==='new'){const n=$('#b1').value.trim();if(!n)return alert('اكتب اسم الصنف');i={id:uid(),name:n,u:$('#b2').value,sell:+$('#b3').value||0,cost:uc,qty:q,min:0,sup:'',img:'',fav:false};db.items.push(i)}
+ else{i=find('items',id);i.qty=Math.round((i.qty+q)*100)/100;i.cost=uc}
+ db.buys.unshift({id:uid(),d:Date.now(),name:i.name,item:i.id,q,total:t,m:$('#b6').value,sup:$('#b7').value.trim()||'مورد غير معروف'});save();cl();R()}
+const CATS=['محروقات','مواصلات','غداء','سجائر استهلكتها (من المخزون)','أصناف أعطيتها مجاناً (من المخزون)','أخرى'];let ec=0;
+function vExp(){const t0=new Date().setHours(0,0,0,0),n=new Date(),m0=new Date(n.getFullYear(),n.getMonth(),1).getTime(),s=a=>a.reduce((x,e)=>x+e.a,0);
+ return `<div class="grid"><div class="card"><div class="mu">مصروفات اليوم</div><b class="bad">${f(s(db.exps.filter(e=>e.d>=t0)))}</b></div><div class="card"><div class="mu">مصروفات الشهر</div><b class="bad">${f(s(db.exps.filter(e=>e.d>=m0)))}</b></div></div><button class="btn" style="width:100%" onclick="expForm()">＋ مصروف جديد</button>${db.exps.slice(0,80).map(e=>`<div class="card row sp" onclick="delExp('${e.id}')"><div><b>${esc(e.cat)}</b>${e.item?` · ${esc(e.iname)} × ${e.q}`:''}<div class="mu">${tm(e.d)} · ${e.m?e.m:'من المخزون (بسعر الجملة)'}${e.note?' · '+esc(e.note):''}</div></div><b class="bad">${f(e.a)}</b></div>`).join('')||'<p class="mu">لا توجد مصروفات</p>'}<p class="mu">اضغط على أي مصروف لحذفه.</p>`}
+function expForm(){const st=ec===3||ec===4;md(`<h3>مصروف جديد</h3><select onchange="ec=+this.value;expForm()">${CATS.map((c,k)=>`<option value="${k}" ${ec===k?'selected':''}>${c}</option>`).join('')}</select>${st?`<select id="e1">${db.items.map(i=>`<option value="${i.id}">${esc(i.name)} (${stk(i)})</option>`).join('')}</select><input id="e2" type="number" inputmode="decimal" placeholder="الكمية (قطع أو غرامات)"><p class="mu">تُخصم من المخزون وتُحسب بسعر الجملة، ولا تؤثر على الرصيد النقدي.</p>`:`<input id="e2" type="number" inputmode="decimal" placeholder="المبلغ"><select id="e3">${METH.map(m=>`<option>${m}</option>`).join('')}</select><p class="mu">يُخصم من رصيد الطريقة المختارة.</p>`}<input id="e4" placeholder="ملاحظة (اختياري)"><div class="row"><button class="btn" style="flex:1" onclick="doExp()">حفظ</button><button class="btn g" onclick="cl()">إغلاق</button></div>`)}
+function doExp(){const st=ec===3||ec===4,v=+$('#e2').value,note=$('#e4').value.trim();if(!(v>0))return alert('أدخل قيمة صحيحة');
+ if(st){const i=find('items',$('#e1').value);if(!i)return alert('اختر صنفاً');i.qty=Math.max(0,Math.round((i.qty-v)*100)/100);db.exps.unshift({id:uid(),d:Date.now(),cat:CATS[ec],a:Math.round((i.cost||0)*v*100)/100,m:null,item:i.id,iname:i.name,q:v,note})}
+ else db.exps.unshift({id:uid(),d:Date.now(),cat:CATS[ec],a:v,m:$('#e3').value,note});save();cl();R()}
+function delExp(id){const e=db.exps.find(x=>x.id===id);if(!e)return;ask('حذف المصروف؟',()=>{if(e.item){const i=find('items',e.item);if(i)i.qty+=e.q}db.exps=db.exps.filter(x=>x.id!==id);save();R()})}
+/* ---------- سجائر اللف ---------- */
+let rpp='لزق';
+function setr(k,v){if(v<=0)cart.splice(k,1);else cart[k].n=v;R()}
+function rollForm(){const ts=db.items.filter(i=>i.u==='g');if(!ts.length)return alert('أضف صنف دخان يُباع بالوزن (غرام) في المخزون أولاً');
+ md(`<h3>🚬 سجائر لف</h3><input id="r1" type="number" inputmode="numeric" placeholder="عدد السجائر" oninput="rUp(1)"><select id="r2" onchange="rUp()">${ts.map(i=>`<option value="${i.id}">${esc(i.name)} (${stk(i)})</option>`).join('')}</select><div class="pm"><button id="pl" onclick="rp('لزق')">ورق لزق</button><button id="po" onclick="rp('أوتومان')">ورق أوتومان</button></div><input id="r3" type="number" inputmode="decimal" placeholder="سعر السيجارة الواحدة" oninput="rUp(1)"><div class="mu" id="rin"></div><div class="row" style="margin-top:8px"><button class="btn" style="flex:1" onclick="addRoll()">إضافة للسلة</button><button class="btn g" onclick="cl()">إغلاق</button></div>`);rp(rpp)}
+function rPrice(){const t=find('items',$('#r2').value),p=db.roll[rpp==='لزق'?'lz':'ot'];return p>0?p:Math.round((t?t.sell*db.roll.g:0)*100)/100}
+function rp(p){rpp=p;$('#pl').className=p==='لزق'?'on':'';$('#po').className=p==='لزق'?'':'on';rUp()}
+function rUp(keep){if(!keep)$('#r3').value=rPrice()||'';const n=+$('#r1').value||0,pr=+$('#r3').value||0;$('#rin').textContent='الوزن المخصوم: '+(+(n*db.roll.g).toFixed(2))+' غ · الإجمالي: '+f(n*pr)}
+function addRoll(){const n=Math.floor(+$('#r1').value),pr=+$('#r3').value,tid=$('#r2').value;if(!(n>0))return alert('أدخل عدد السجائر');if(!(pr>0))return alert('أدخل سعر السيجارة');const t=find('items',tid);
+ const l=cart.find(x=>x.r&&x.tid===tid&&x.pp===rpp&&x.pr===pr);if(l)l.n+=n;else cart.push({r:1,tid,tn:t.name,pp:rpp,pr,n,g:db.roll.g});cl();R()}
+/* ---------- البيع ---------- */
+const ctotal=()=>cart.reduce((s,l)=>{if(l.r)return s+l.n*l.pr;const i=find('items',l.id);return s+(i?i.sell*l.q:0)},0);
+function vSell(){
+ const favs=db.items.filter(i=>i.fav);
+ const list=db.items.filter(i=>!q||i.name.includes(q));
+ return `<input placeholder="🔍 بحث عن صنف" value="${esc(q)}" oninput="q=this.value;R2()" id="qs">
+ ${favs.length?`<div class="chips">${favs.map(i=>`<button class="btn s" onclick="add('${i.id}')">⭐ ${esc(i.name)}</button>`).join('')}</div>`:''}
+ <button class="btn" style="width:100%;margin:6px 0" onclick="rollForm()">🚬 سجائر لف (حسب العدد)</button><div class="grid">${list.map(i=>`<div class="it" onclick="add('${i.id}')"><span class="st" ${role==='admin'?`onclick="event.stopPropagation();fav('${i.id}')"`:''}>${i.fav?'⭐':(role==='admin'?'☆':'')}</span>${i.img?`<img src="${i.img}">`:'<div class="ph">📦</div>'}<div><b>${esc(i.name)}</b></div><div class="mu">${f(i.sell)}${i.u==='g'?' / غرام':''}</div><div class="mu ${i.qty<=(i.min||0)?'bad':''}">${stk(i)}</div></div>`).join('')||'<p class="mu">لا توجد أصناف، أضفها من المخزون</p>'}</div>
+ ${cart.length?`<h3>السلة</h3>${cart.map((l,k)=>{if(l.r)return `<div class="card row sp"><div style="flex:1"><b>🚬 سجائر لف (${l.pp})</b><div class="mu">${esc(l.tn)} · ${f(l.pr)} × ${l.n} = ${f(l.pr*l.n)} · ${+(l.n*l.g).toFixed(2)} غ</div></div><button class="btn g s" onclick="setr(${k},${l.n-1})">−</button><b>${l.n}</b><button class="btn g s" onclick="setr(${k},${l.n+1})">+</button></div>`;const i=find('items',l.id);if(!i)return'';return `<div class="card row sp"><div style="flex:1"><b>${esc(i.name)}</b><div class="mu">${f(i.sell)} × ${l.q}${unit(i)==='غ'?' غ':''} = ${f(i.sell*l.q)}</div></div>${i.u==='g'?`<input type="number" inputmode="decimal" style="width:80px" value="${l.q}" onchange="setq(${k},this.value)">`:`<button class="btn g s" onclick="setq(${k},${l.q-1})">−</button><b>${l.q}</b><button class="btn g s" onclick="setq(${k},${l.q+1})">+</button>`}</div>`}).join('')}
+ <div class="bar"><span>الإجمالي ${f(ctotal())}</span><button class="btn" style="background:var(--prt);color:var(--pr)" onclick="checkout()">إتمام البيع</button></div>`:''}`;
+}
+function R2(){const p=$('#qs').selectionStart;R();const e=$('#qs');e.focus();e.setSelectionRange(p,p)}
+function fav(id){const i=find('items',id);i.fav=!i.fav;save();R()}
+function add(id){const i=find('items',id);const l=cart.find(x=>x.id===id);
+ if(i.u==='g'){inp('الكمية بالغرام — '+i.name,100,v=>{if(!(v>0))return;const l2=cart.find(x=>x.id===id);if(l2)l2.q+=v;else cart.push({id,q:v});R()});return}
+ else{if(l)l.q++;else cart.push({id,q:1})}R()}
+function setq(k,v){v=parseFloat(v);if(!v||v<=0)cart.splice(k,1);else cart[k].q=v;R()}
+function checkout(){
+ const bad=cart.find(l=>{const i=find('items',l.r?l.tid:l.id);return !i||i.qty<(l.r?l.n*l.g:l.q)});
+ if(bad){ask('الكمية في السلة أكبر من المتوفر لبعض الأصناف. المتابعة؟',()=>{mode='now';pm='كاش';sel='';pcs='';pam='';co()});return}
+ mode='now';pm='كاش';sel='';pcs='';pam='';co()}
+function co(){
+ md(`<h3>تأكيد البيع — ${f(ctotal())}</h3>
+ <div class="pm"><button class="${mode==='now'?'on':''}" onclick="mode='now';co()">دفع فوري</button><button class="${mode==='later'?'on':''}" onclick="mode='later';co()">بيع مؤجل (دين)</button></div>
+ ${mode==='now'?`<h3>طريقة الدفع</h3><div class="pm">${METH.map(m=>`<button class="${pm===m?'on':''}" onclick="pm='${m}';co()">${m}</button>`).join('')}</div><h3>سداد دين (اختياري)</h3><select onchange="pcs=this.value;co()"><option value="">— بدون —</option>${db.custs.filter(c=>debt(c)>0).map(c=>`<option value="${c.id}" ${pcs===c.id?'selected':''}>${esc(c.name)} (${f(debt(c))})</option>`).join('')}</select>${pcs?`<input type="number" inputmode="decimal" placeholder="مبلغ السداد (بنفس طريقة الدفع)" value="${pam}" oninput="pam=this.value">`:''}`
+ :`<h3>الزبون</h3><select id="cs" onchange="sel=this.value;co()"><option value="">— اختر زبوناً —</option>${db.custs.map(c=>`<option value="${c.id}" ${sel===c.id?'selected':''}>${esc(c.name)} (${f(debt(c))})</option>`).join('')}<option value="new" ${sel==='new'?'selected':''}>＋ زبون جديد</option></select>
+ ${sel==='new'?'<input id="nn" placeholder="اسم الزبون"><input id="np" placeholder="رقم الجوال" inputmode="tel">':''}`}
+ <textarea id="nt" placeholder="ملاحظة (اختياري)" rows="2"></textarea>
+ <div class="row" style="margin-top:8px"><button class="btn" style="flex:1" onclick="done()">تأكيد</button><button class="btn g" onclick="cl()">إلغاء</button></div>`)}
+function done(){
+ const note=$('#nt').value.trim();let c=null;
+ if(mode==='later'){
+  if(sel==='new'){const n=$('#nn').value.trim();if(!n)return alert('اكتب اسم الزبون');c={id:uid(),name:n,phone:$('#np').value.trim(),log:[]};db.custs.push(c)}
+  else if(sel)c=find('custs',sel);else return alert('اختر زبوناً')}
+ const lines=cart.map(l=>{if(l.r){const t=find('items',l.tid);t.qty=Math.max(0,Math.round((t.qty-l.n*l.g)*100)/100);return{id:t.id,name:'سيجارة لف ('+l.pp+') - '+t.name,q:l.n,p:l.pr,c:Math.round((t.cost||0)*l.g*10000)/10000,u:'p',roll:1}}const i=find('items',l.id);i.qty=Math.max(0,Math.round((i.qty-l.q)*100)/100);return{id:i.id,name:i.name,q:l.q,p:i.sell,c:i.cost||0,u:i.u}});
+ const total=ctotal();db.n++;
+ const s={id:uid(),no:db.n,d:Date.now(),lines,total,m:mode==='now'?pm:'دين',cust:c?c.id:null,cn:c?c.name:'',note};
+ db.sales.unshift(s);
+ if(c)c.log.unshift({id:uid(),d:s.d,t:'debt',a:total,note:'فاتورة #'+s.no+(note?' - '+note:'')});
+ if(mode==='now'&&pcs&&+pam>0){const pc=find('custs',pcs);if(pc)pc.log.unshift({id:uid(),d:s.d+1,t:'pay',a:Math.min(+pam,debt(pc)),m:pm,note:'سداد أثناء فاتورة #'+s.no})}
+ cart=[];save();cl();R()}
+/* ---------- المخزون ---------- */
+function vStock(){return `${role==='admin'?`<div class="row"><button class="btn" style="flex:1" onclick="itemForm()">＋ إضافة صنف</button><button class="btn g" style="flex:1" onclick="buyForm()">🛒 شراء مستعجل</button></div>`:''}
+ ${db.items.map(i=>`<div class="card row" onclick="${role==='admin'?`itemForm('${i.id}')`:''}">${i.img?`<img class="th" src="${i.img}">`:'<div class="th">📦</div>'}<div style="flex:1"><b>${esc(i.name)}</b><div class="mu">بيع ${f(i.sell)}${i.u==='g'?' (للغرام)':''}</div></div><div class="${i.qty<=(i.min||0)?'bad':''}"><b>${stk(i)}</b></div></div>`).join('')}`}
+let tmpImg='';
+function itemForm(id){const i=id?find('items',id):{name:'',sell:'',cost:'',qty:'',u:'p',min:'',sup:'',img:''};tmpImg=i.img||'';
+ md(`<h3>${id?'تعديل صنف':'صنف جديد'}</h3>
+ <div class="row"><img id="pv" class="th" style="width:70px;height:70px;${tmpImg?'':'display:none'}" src="${tmpImg}"><input type="file" accept="image/*" onchange="pic(this)"></div>
+ <input id="f1" placeholder="اسم الصنف" value="${esc(i.name)}">
+ <select id="f2"><option value="p" ${i.u==='p'?'selected':''}>يُباع بالقطعة</option><option value="g" ${i.u==='g'?'selected':''}>يُباع بالوزن (غرام)</option></select>
+ <input id="f3" type="number" inputmode="decimal" placeholder="سعر البيع (للقطعة أو للغرام)" value="${i.sell}">
+ <input id="f4" type="number" inputmode="decimal" placeholder="سعر الجملة (للقطعة أو للغرام)" value="${i.cost}">
+ <input id="f5" type="number" inputmode="decimal" placeholder="الكمية المتوفرة (قطع أو غرامات)" value="${i.qty}">
+ <input id="f6" type="number" inputmode="decimal" placeholder="حد التنبيه عند النقص" value="${i.min}">
+ <select id="f7"><option value="">— المورد —</option>${db.sups.map(s=>`<option value="${s.id}" ${i.sup===s.id?'selected':''}>${esc(s.name)}</option>`).join('')}</select>
+ <div class="row" style="margin-top:8px"><button class="btn" style="flex:1" onclick="saveItem('${id||''}')">حفظ</button>${id?`<button class="btn r" onclick="delI('${id}')">حذف</button>`:''}<button class="btn g" onclick="cl()">إغلاق</button></div>`)}
+function pic(el){const fl=el.files[0];if(!fl)return;const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{const c=document.createElement('canvas');const s=Math.min(1,200/Math.max(im.width,im.height));c.width=im.width*s;c.height=im.height*s;c.getContext('2d').drawImage(im,0,0,c.width,c.height);tmpImg=c.toDataURL('image/jpeg',.7);const p=$('#pv');p.src=tmpImg;p.style.display='block'};im.src=r.result};r.readAsDataURL(fl)}
+function saveItem(id){const n=$('#f1').value.trim();if(!n)return alert('اكتب اسم الصنف');
+ const o={name:n,u:$('#f2').value,sell:+$('#f3').value||0,cost:+$('#f4').value||0,qty:+$('#f5').value||0,min:+$('#f6').value||0,sup:$('#f7').value,img:tmpImg};
+ if(id)Object.assign(find('items',id),o);else db.items.push({id:uid(),fav:false,...o});save();cl();R()}
+function delI(id){ask('حذف الصنف نهائياً؟',()=>{db.items=db.items.filter(x=>x.id!==id);cart=cart.filter(l=>l.id!==id&&l.tid!==id);save();cl();R()})}
+/* ---------- الموردين ---------- */
+function vSup(){return `<button class="btn" style="width:100%" onclick="supForm()">＋ إضافة مورد</button>
+ ${db.sups.map(s=>`<div class="card row sp"><div onclick="supForm('${s.id}')" style="flex:1"><b>${esc(s.name)}</b><div class="mu">${esc(s.phone)} ${s.note?'· '+esc(s.note):''}</div><div class="mu">${db.items.filter(i=>i.sup===s.id).length} صنف</div></div>${s.phone?`<a class="btn s" href="tel:${esc(s.phone)}" style="text-decoration:none">📞</a>`:''}</div>`).join('')}`}
+function supForm(id){const s=id?find('sups',id):{name:'',phone:'',note:''};
+ md(`<h3>${id?'تعديل مورد':'مورد جديد'}</h3><input id="s1" placeholder="اسم المورد / الشركة" value="${esc(s.name)}"><input id="s2" placeholder="رقم الهاتف" inputmode="tel" value="${esc(s.phone)}"><textarea id="s3" rows="2" placeholder="بيانات إضافية (العنوان، الأصناف...)">${esc(s.note)}</textarea>
+ <div class="row"><button class="btn" style="flex:1" onclick="saveSup('${id||''}')">حفظ</button>${id?`<button class="btn r" onclick="ask('حذف المورد؟',()=>{db.sups=db.sups.filter(x=>x.id!=='${id}');save();cl();R()})">حذف</button>`:''}<button class="btn g" onclick="cl()">إغلاق</button></div>`)}
+function saveSup(id){const n=$('#s1').value.trim();if(!n)return alert('اكتب الاسم');const o={name:n,phone:$('#s2').value.trim(),note:$('#s3').value.trim()};if(id)Object.assign(find('sups',id),o);else db.sups.push({id:uid(),...o});save();cl();R()}
+/* ---------- الزبائن ---------- */
+function vCust(){const tot=db.custs.reduce((s,c)=>s+debt(c),0);
+ return `<div class="card row sp"><span>إجمالي الديون</span><b class="bad">${f(tot)}</b></div><button class="btn" style="width:100%" onclick="custForm()">＋ زبون جديد</button>
+ ${db.custs.map(c=>{const d=debt(c);return `<div class="card row sp" onclick="custView('${c.id}')"><div><b>${esc(c.name)}</b><div class="mu">${esc(c.phone)}</div></div><b class="${d>0?'bad':'ok'}">${f(d)}</b></div>`}).join('')}`}
+function custForm(){md(`<h3>زبون جديد</h3><input id="c1" placeholder="الاسم"><input id="c2" placeholder="رقم الجوال" inputmode="tel"><div class="row"><button class="btn" style="flex:1" onclick="const n=$('#c1').value.trim();if(!n)return;db.custs.push({id:uid(),name:n,phone:$('#c2').value.trim(),log:[]});save();cl();R()">حفظ</button><button class="btn g" onclick="cl()">إغلاق</button></div>`)}
+function custView(id){const c=find('custs',id);let run=debt(c);
+ const rows=c.log.map(l=>{const r=run;run-=(l.t==='debt'?l.a:-l.a);return `<div class="card row sp"><div><b class="${l.t==='debt'?'bad':'ok'}">${l.t==='debt'?'دين':'دفعة'} ${f(l.a)}</b><div class="mu">${tm(l.d)}${l.note?' · '+esc(l.note):''}</div></div><span class="mu">الرصيد ${f(r)}</span></div>`}).join('');
+ md(`<div class="row sp"><h3 style="margin:0">${esc(c.name)}</h3><b class="${debt(c)>0?'bad':'ok'}">${f(debt(c))}</b></div><div class="mu">${esc(c.phone)}</div>
+ <input id="ca" type="number" inputmode="decimal" placeholder="المبلغ"><select id="cm">${METH.map(m=>`<option>${m}</option>`).join('')}</select><input id="cn" placeholder="ملاحظة (اختياري)">
+ <div class="row"><button class="btn ok" style="flex:1;background:var(--ok);color:#fff" onclick="cmov('${id}','pay')">تسجيل دفعة</button>${role==='admin'?`<button class="btn r" style="flex:1" onclick="cmov('${id}','debt')">إضافة دين</button>`:''}</div>
+ <h3>أرشيف المديونية</h3>${rows||'<p class="mu">لا توجد حركات</p>'}
+ <div class="row">${role==='admin'?`<button class="btn g s" onclick="ask('حذف الزبون وأرشيفه؟',()=>{db.custs=db.custs.filter(x=>x.id!=='${id}');save();cl();R()})">حذف الزبون</button>`:''}<button class="btn g" style="flex:1" onclick="cl()">إغلاق</button></div>`)}
+function cmov(id,t){const a=+$('#ca').value;if(!a||a<=0)return alert('أدخل مبلغاً صحيحاً');find('custs',id).log.unshift({id:uid(),d:Date.now(),t,a,m:t==='pay'?$('#cm').value:undefined,note:$('#cn').value.trim()});save();R();custView(id)}
+/* ---------- التقارير ---------- */
+function vRep(){const t0=new Date().setHours(0,0,0,0);const ts=db.sales.filter(s=>s.d>=t0);
+ const sum=a=>a.reduce((s,x)=>s+x.total,0);
+ const prof=a=>a.reduce((s,x)=>s+x.lines.reduce((p,l)=>p+(l.p-l.c)*l.q,0),0);
+ const low=db.items.filter(i=>i.qty<=(i.min||0)&&i.min>0);
+ return `<div class="grid"><div class="card"><div class="mu">الرصيد الإجمالي</div><b>${f(cashBal())}</b></div><div class="card"><div class="mu">مبيعات اليوم</div><b>${f(sum(ts))}</b></div><div class="card"><div class="mu">ربح اليوم (قبل المصروفات)</div><b class="ok">${f(prof(ts))}</b></div><div class="card"><div class="mu">مصروفات اليوم</div><b class="bad">${f(db.exps.filter(e=>e.d>=t0).reduce((x,e)=>x+e.a,0))}</b></div><div class="card"><div class="mu">صافي ربح اليوم</div><b class="ok">${f(prof(ts)-db.exps.filter(e=>e.d>=t0).reduce((x,e)=>x+e.a,0))}</b></div><div class="card"><div class="mu">ديون الزبائن</div><b class="bad">${f(db.custs.reduce((s,c)=>s+debt(c),0))}</b></div><div class="card"><div class="mu">المخزون (بسعر الجملة)</div><b>${f(db.items.reduce((s,i)=>s+(i.cost||0)*i.qty,0))}</b></div></div>
+ ${low.length?`<div class="card"><b class="bad">⚠ أصناف قاربت على النفاد</b>${low.map(i=>`<div class="mu">${esc(i.name)}: ${stk(i)}</div>`).join('')}</div>`:''}
+ <h3>سجل المبيعات</h3>${db.sales.slice(0,60).map(s=>`<div class="card" onclick="saleView('${s.id}')"><div class="row sp"><b>فاتورة #${s.no}</b><b>${f(s.total)}</b></div><div class="mu">${tm(s.d)} · ${s.m}${s.cn?' · '+esc(s.cn):''}</div></div>`).join('')||'<p class="mu">لا توجد مبيعات</p>'}
+ <h3>نسخ احتياطي</h3><div class="row"><button class="btn g" style="flex:1" onclick="bk()">تصدير / استيراد</button></div>`}
+function saleView(id){const s=find('sales',id);md(`<h3>فاتورة #${s.no}</h3><div class="mu">${tm(s.d)} · ${s.m}${s.cn?' · '+esc(s.cn):''}</div>${s.lines.map(l=>`<div class="row sp card"><span>${esc(l.name)} × ${l.q}${l.u==='g'?' غ':''}</span><b>${f(l.p*l.q)}</b></div>`).join('')}<div class="row sp"><b>الإجمالي</b><b>${f(s.total)}</b></div>${s.note?`<p class="mu">ملاحظة: ${esc(s.note)}</p>`:''}<button class="btn g" style="width:100%;margin-top:8px" onclick="cl()">إغلاق</button>`)}
+function bk(){md(`<h3>نسخة احتياطية</h3><p class="mu">انسخ النص وخزّنه في مكان آمن (ملاحظات / واتساب لنفسك). للاستيراد الصق النص هنا.</p><textarea id="bt" rows="6">${esc(JSON.stringify(db))}</textarea><div class="row"><button class="btn" style="flex:1" onclick="$('#bt').select();document.execCommand('copy')">نسخ</button><button class="btn r" style="flex:1" onclick="imp()">استيراد (يستبدل البيانات)</button></div><button class="btn g" style="width:100%;margin-top:8px" onclick="cl()">إغلاق</button>`)}
+function imp(){try{const d=JSON.parse($('#bt').value);if(!d.items||!d.sales)throw 0;ask('سيتم استبدال كل البيانات الحالية. متابعة؟',()=>{db=d;db.users=db.users||{admin:'admin123',user:'user123'};db.adj=db.adj||[];db.exps=db.exps||[];db.buys=db.buys||[];db.roll=db.roll||{g:0.4,lz:0,ot:0};save();cl();R()})}catch(e){alert('النص غير صالح')}}
+let offOK=false;if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').then(()=>navigator.serviceWorker.ready).then(()=>{offOK=true;R()}).catch(()=>{})}
+R();
+</script>
+</body>
+</html>
