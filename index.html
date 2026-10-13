@@ -40,6 +40,10 @@ h3{margin:12px 0 4px}
 #cartfab{position:fixed;left:14px;bottom:calc(78px + env(safe-area-inset-bottom,0px));width:60px;height:60px;border-radius:50%;border:0;background:var(--pr);color:var(--prt);font-size:28px;box-shadow:0 4px 14px #0007;z-index:6;display:none}
 #cbd{position:absolute;top:-4px;right:-4px;min-width:24px;height:24px;border-radius:12px;background:var(--bad);color:#fff;font-size:14px;font-weight:700;line-height:24px;padding:0 6px;font-family:inherit}
 .md .bar{bottom:0}
+.it,.card,.chips button,nav button{cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none}
+.it img,.it .ph{pointer-events:none;-webkit-touch-callout:none}
+.kd{min-height:56px;border:1px solid var(--bd);border-radius:12px;background:var(--card);font-size:32px;text-align:center;line-height:56px;margin:6px 0;direction:ltr;color:var(--tx)}.kd:empty::before{content:attr(data-ph);color:var(--mu);font-size:16px}
+.kg{direction:ltr;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:8px 0}.kg button{padding:16px 0;font-size:26px;border:1px solid var(--bd);border-radius:12px;background:var(--card);color:var(--tx)}.kg button:active{background:var(--bd)}
 #prn{display:none}
 @media print{body>*:not(#prn){display:none!important}#prn{display:block!important;direction:rtl;color:#000;background:#fff;font-size:12px;font-family:-apple-system,'Segoe UI',Tahoma,sans-serif}body{background:#fff!important;padding:0!important}:root{padding:0!important}#prn table{width:100%;border-collapse:collapse;margin:6px 0}#prn th,#prn td{border:1px solid #444;padding:4px;text-align:right;color:#000}#prn th{background:#eee}.pb{page-break-inside:avoid;margin-bottom:14px}}
 </style>
@@ -76,8 +80,12 @@ let _cb=null;
 function ov2(h){$('#md2').innerHTML=h;$('#ov2').style.display='flex'}
 function cl2(){$('#ov2').style.display='none'}
 function ask(m,fn){_cb=fn;ov2(`<h3>${esc(m)}</h3><div class="row"><button class="btn" style="flex:1" onclick="cl2();_cb&&_cb()">نعم</button><button class="btn g" style="flex:1" onclick="cl2()">إلغاء</button></div>`)}
-function inp(t,v,fn){_cb=fn;ov2(`<h3>${esc(t)}</h3><input id="pi" type="number" inputmode="decimal" value="${v}"><div class="row"><button class="btn" style="flex:1" onclick="const x=parseFloat($('#pi').value);cl2();_cb&&_cb(x)">إضافة</button><button class="btn g" onclick="cl2()">إلغاء</button></div>`);setTimeout(()=>{const e=$('#pi');e&&e.select()},60)}
-window.alert=m=>{const t=document.createElement('div');t.textContent=m;t.style.cssText='position:fixed;top:calc(env(safe-area-inset-top,0px) + 12px);left:12px;right:12px;background:var(--pr);color:var(--prt);padding:12px;border-radius:12px;z-index:60;text-align:center;font-weight:700';document.body.appendChild(t);setTimeout(()=>t.remove(),2600)};
+let kp='',kpFn=null;
+function inp(t,v,fn){kpFn=fn;kp='';ov2(`<h3>${esc(t)}</h3><div id="kd" class="kd" data-ph="الوزن بالغرام"></div><div class="kg">${['1','2','3','4','5','6','7','8','9','.','0','⌫'].map(k=>`<button onclick="kk('${k}')">${k}</button>`).join('')}</div><div class="row"><button class="btn" style="flex:1" onclick="kok()">إضافة</button><button class="btn g" onclick="cl2()">إلغاء</button></div>`)}
+function kk(k){if(k==='⌫')kp=kp.slice(0,-1);else if(k==='.'){if(!kp.includes('.'))kp=(kp||'0')+'.'}else if(kp.length<8){kp+=k;if(kp.length>1&&kp[0]==='0'&&kp[1]!=='.')kp=kp.slice(1)}$('#kd').textContent=kp}
+function kok(){const v=parseFloat(kp);if(!(v>0))return alert('أدخل الوزن');cl2();if(kpFn)kpFn(v)}
+function toast(m,ms){const t=document.createElement('div');t.textContent=m;t.style.cssText='position:fixed;top:calc(env(safe-area-inset-top,0px) + 12px);left:12px;right:12px;background:var(--pr);color:var(--prt);padding:12px;border-radius:12px;z-index:60;text-align:center;font-weight:700';document.body.appendChild(t);setTimeout(()=>t.remove(),ms||2600)}
+window.alert=m=>toast(m);
 function cl(){cartOpen=false;$('#ov').style.display='none'}
 function md(h){cartOpen=false;$('#md').innerHTML=h;$('#ov').style.display='flex'}
 function R(){
@@ -191,8 +199,8 @@ function vSell(){
 function R2(){const p=$('#qs').selectionStart;R();const e=$('#qs');e.focus();e.setSelectionRange(p,p)}
 function fav(id){const i=find('items',id);i.fav=!i.fav;save();R()}
 function add(id){const i=find('items',id);const l=cart.find(x=>x.id===id);
- if(i.u==='ml'){mlForm(id);return}if(i.u==='g'){inp('الكمية بالغرام — '+i.name,100,v=>{if(!(v>0))return;const l2=cart.find(x=>x.id===id);if(l2)l2.q+=v;else cart.push({id,q:v});R()});return}
- else{if(l)l.q++;else cart.push({id,q:1})}R()}
+ if(i.u==='ml'){mlForm(id);return}if(i.u==='g'){inp(i.name+' — '+f(i.sell)+' / غرام',0,v=>{if(!(v>0))return;const l2=cart.find(x=>x.id===id);if(l2)l2.q+=v;else cart.push({id,q:v});R()});return}
+ else{if(l)l.q++;else cart.push({id,q:1});toast('✓ '+i.name,1000)}R()}
 function setq(k,v){v=parseFloat(v);if(!v||v<=0)cart.splice(k,1);else cart[k].q=v;R()}
 function checkout(){
  const bad=cart.find(l=>{const i=find('items',l.r?l.tid:l.id);return !i||(l.r?i.qty<l.n*l.g:(l.f&&i.fl?(i.fl.find(x=>x.n===l.f)||{q:0}).q:i.qty)<l.q)});
