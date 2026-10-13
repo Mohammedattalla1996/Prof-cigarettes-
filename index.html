@@ -37,6 +37,9 @@ input,select,textarea{width:100%;padding:10px;border:1px solid var(--bd);border-
 .pm{display:flex;flex-wrap:wrap;gap:6px}.pm button{flex:1 1 30%}
 h3{margin:12px 0 4px}
 .rt{width:100%;border-collapse:collapse;margin:6px 0}.rt td,.rt th{padding:6px;border-bottom:1px solid var(--bd);text-align:right;font-size:14px}.rt th{color:var(--mu);font-size:13px}
+#cartfab{position:fixed;left:14px;bottom:calc(78px + env(safe-area-inset-bottom,0px));width:60px;height:60px;border-radius:50%;border:0;background:var(--pr);color:var(--prt);font-size:28px;box-shadow:0 4px 14px #0007;z-index:6;display:none}
+#cbd{position:absolute;top:-4px;right:-4px;min-width:24px;height:24px;border-radius:12px;background:var(--bad);color:#fff;font-size:14px;font-weight:700;line-height:24px;padding:0 6px;font-family:inherit}
+.md .bar{bottom:0}
 #prn{display:none}
 @media print{body>*:not(#prn){display:none!important}#prn{display:block!important;direction:rtl;color:#000;background:#fff;font-size:12px;font-family:-apple-system,'Segoe UI',Tahoma,sans-serif}body{background:#fff!important;padding:0!important}:root{padding:0!important}#prn table{width:100%;border-collapse:collapse;margin:6px 0}#prn th,#prn td{border:1px solid #444;padding:4px;text-align:right;color:#000}#prn th{background:#eee}.pb{page-break-inside:avoid;margin-bottom:14px}}
 </style>
@@ -46,6 +49,7 @@ h3{margin:12px 0 4px}
 <main id="m"></main>
 <nav id="nv"></nav>
 <div id="prn"></div>
+<button id="cartfab" onclick="cartView()">🛒<span id="cbd"></span></button>
 <div id="ov2" class="ov" style="display:none;z-index:40" onclick="if(event.target===this)cl2()"><div class="md" id="md2"></div></div>
 <div id="ov" class="ov" style="display:none" onclick="if(event.target===this)cl()"><div class="md" id="md"></div></div>
 <script>
@@ -74,14 +78,16 @@ function cl2(){$('#ov2').style.display='none'}
 function ask(m,fn){_cb=fn;ov2(`<h3>${esc(m)}</h3><div class="row"><button class="btn" style="flex:1" onclick="cl2();_cb&&_cb()">نعم</button><button class="btn g" style="flex:1" onclick="cl2()">إلغاء</button></div>`)}
 function inp(t,v,fn){_cb=fn;ov2(`<h3>${esc(t)}</h3><input id="pi" type="number" inputmode="decimal" value="${v}"><div class="row"><button class="btn" style="flex:1" onclick="const x=parseFloat($('#pi').value);cl2();_cb&&_cb(x)">إضافة</button><button class="btn g" onclick="cl2()">إلغاء</button></div>`);setTimeout(()=>{const e=$('#pi');e&&e.select()},60)}
 window.alert=m=>{const t=document.createElement('div');t.textContent=m;t.style.cssText='position:fixed;top:calc(env(safe-area-inset-top,0px) + 12px);left:12px;right:12px;background:var(--pr);color:var(--prt);padding:12px;border-radius:12px;z-index:60;text-align:center;font-weight:700';document.body.appendChild(t);setTimeout(()=>t.remove(),2600)};
-function cl(){$('#ov').style.display='none'}
-function md(h){$('#md').innerHTML=h;$('#ov').style.display='flex'}
+function cl(){cartOpen=false;$('#ov').style.display='none'}
+function md(h){cartOpen=false;$('#md').innerHTML=h;$('#ov').style.display='flex'}
 function R(){
- if(!role){$('#nv').innerHTML='';$('#bal').innerHTML='';$('#m').innerHTML=vLogin();return}
+ if(!role){$('#cartfab').style.display='none';$('#nv').innerHTML='';$('#bal').innerHTML='';$('#m').innerHTML=vLogin();return}
  $('#dt').textContent=new Date().toLocaleDateString('ar-EG',{weekday:'long',day:'numeric',month:'long'})+(offOK?' · 🟢 أوفلاين جاهز':' · ⚪ أوفلاين غير جاهز');
  $('#bal').innerHTML=role==='admin'?'<a onclick="balView()" style="cursor:pointer"><small>الرصيد ›</small><br>'+f(cashBal())+'</a> <button class="btn g s" onclick="menu()">⚙</button>':'<button class="btn g s" onclick="logout()">خروج</button>';
  $('#nv').innerHTML=TABS.filter(t=>role==='admin'||(t[0]!=='sup'&&t[0]!=='rep'&&t[0]!=='exp')).map(t=>`<button class="${tab===t[0]?'on':''}" onclick="tab='${t[0]}';R()"><b>${t[1]}</b>${t[2]}</button>`).join('');
  $('#m').innerHTML=({sell:vSell,stock:vStock,cust:vCust,sup:vSup,exp:vExp,rep:vRep})[tab]();
+ $('#cartfab').style.display=tab==='sell'?'block':'none';const cb=$('#cbd');cb.textContent=cart.length;cb.style.display=cart.length?'block':'none';
+ if(cartOpen)cartView();
 }
 /* ---------- الدخول والرصيد ---------- */
 function vLogin(){return `<div class="card" style="margin-top:40px;text-align:center"><div style="font-size:48px">🚬</div><h3>Prof Cigarettes</h3><input id="lu" placeholder="اسم المستخدم" autocapitalize="none" autocomplete="username"><input id="lp" type="password" placeholder="كلمة المرور" autocomplete="current-password"><button class="btn" style="width:100%;margin-top:6px" onclick="login()">دخول</button><div class="mu" style="margin-top:10px">${offOK?'🟢 جاهز للعمل بدون إنترنت':'⚪ غير جاهز للأوفلاين بعد، أبقِ الصفحة مفتوحة ثم أعد فتحها'}</div></div>`}
@@ -169,6 +175,8 @@ const has=(t,q)=>String(t||'').toLowerCase().includes(String(q||'').trim().toLow
 function sl(id){const inp=$('#'+id);if(!inp)return;const t=document.createElement('div');t.innerHTML=({sell:vSell,stock:vStock,cust:vCust})[tab]();const n=t.querySelector('#'+id);while(inp.nextSibling)inp.nextSibling.remove();while(n.nextSibling)inp.parentNode.appendChild(n.nextSibling)}
 function csAll(){return `<option value="">— اختر زبوناً —</option>${db.custs.filter(c=>has(c.name+' '+c.phone,csq)||sel===c.id).map(c=>`<option value="${c.id}" ${sel===c.id?'selected':''}>${esc(c.name)} (${f(debt(c))})</option>`).join('')}<option value="new" ${sel==='new'?'selected':''}>＋ زبون جديد</option>`}
 function fillCs(){const e=$('#cs');if(e)e.innerHTML=csAll()}
+let cartOpen=false,CV=0;
+function cartView(){CV=1;const h=vSell();CV=0;const t='<h3>السلة</h3>',i=h.indexOf(t);md(`<h3 style="margin-top:0">🛒 السلة (${cart.length})</h3>`+(cart.length&&i>=0?h.slice(i+t.length):'<p class="mu">السلة فارغة، اختر أصنافاً من الشاشة.</p>')+`<button class="btn g" style="width:100%;margin-top:8px" onclick="cl()">متابعة التسوق</button>`);cartOpen=true}
 /* ---------- البيع ---------- */
 const ctotal=()=>cart.reduce((s,l)=>{if(l.r)return s+l.n*l.pr;const i=find('items',l.id);return s+(i?i.sell*l.q:0)},0);
 function vSell(){
@@ -177,7 +185,7 @@ function vSell(){
  return `<input placeholder="🔍 بحث عن صنف" value="${esc(q)}" oninput="q=this.value;sl('qs')" id="qs">
  ${favs.length?`<div class="chips">${favs.map(i=>`<button class="btn s" onclick="add('${i.id}')">⭐ ${esc(i.name)}</button>`).join('')}</div>`:''}
  <button class="btn" style="width:100%;margin:6px 0" onclick="rollForm()">🚬 سجائر لف (حسب العدد)</button><div class="grid">${list.map(i=>`<div class="it" onclick="add('${i.id}')"><span class="st" ${role==='admin'?`onclick="event.stopPropagation();fav('${i.id}')"`:''}>${i.fav?'⭐':(role==='admin'?'☆':'')}</span>${i.img?`<img src="${i.img}">`:'<div class="ph">📦</div>'}<div><b>${esc(i.name)}</b></div><div class="mu">${f(i.sell)}${i.u==='g'?' / غرام':i.u==='ml'?' / مل':''}</div><div class="mu ${i.qty<=(i.min||0)?'bad':''}">${stk(i)}</div></div>`).join('')||'<p class="mu">لا توجد أصناف، أضفها من المخزون</p>'}</div>
- ${cart.length?`<h3>السلة</h3>${cart.map((l,k)=>{if(l.r)return `<div class="card row sp"><div style="flex:1"><b>🚬 سجائر لف (${l.pp})</b><div class="mu">${esc(l.tn)} · ${f(l.pr)} × ${l.n} = ${f(l.pr*l.n)} · ${+(l.n*l.g).toFixed(2)} غ</div></div><button class="btn g s" onclick="setr(${k},${l.n-1})">−</button><b>${l.n}</b><button class="btn g s" onclick="setr(${k},${l.n+1})">+</button></div>`;const i=find('items',l.id);if(!i)return'';return `<div class="card row sp"><div style="flex:1"><b>${esc(i.name)}${l.f?' - '+esc(l.f):''}</b><div class="mu">${f(i.sell)} × ${l.q}${i.u!=='p'?' '+unit(i):''} = ${f(i.sell*l.q)}</div></div>${i.u!=='p'?`<input type="number" inputmode="decimal" style="width:80px" value="${l.q}" onchange="setq(${k},this.value)">`:`<button class="btn g s" onclick="setq(${k},${l.q-1})">−</button><b>${l.q}</b><button class="btn g s" onclick="setq(${k},${l.q+1})">+</button>`}</div>`}).join('')}
+ ${CV&&cart.length?`<h3>السلة</h3>${cart.map((l,k)=>{if(l.r)return `<div class="card row sp"><div style="flex:1"><b>🚬 سجائر لف (${l.pp})</b><div class="mu">${esc(l.tn)} · ${f(l.pr)} × ${l.n} = ${f(l.pr*l.n)} · ${+(l.n*l.g).toFixed(2)} غ</div></div><button class="btn g s" onclick="setr(${k},${l.n-1})">−</button><b>${l.n}</b><button class="btn g s" onclick="setr(${k},${l.n+1})">+</button></div>`;const i=find('items',l.id);if(!i)return'';return `<div class="card row sp"><div style="flex:1"><b>${esc(i.name)}${l.f?' - '+esc(l.f):''}</b><div class="mu">${f(i.sell)} × ${l.q}${i.u!=='p'?' '+unit(i):''} = ${f(i.sell*l.q)}</div></div>${i.u!=='p'?`<input type="number" inputmode="decimal" style="width:80px" value="${l.q}" onchange="setq(${k},this.value)">`:`<button class="btn g s" onclick="setq(${k},${l.q-1})">−</button><b>${l.q}</b><button class="btn g s" onclick="setq(${k},${l.q+1})">+</button>`}</div>`}).join('')}
  <div class="bar"><span>الإجمالي ${f(ctotal())}</span><button class="btn" style="background:var(--prt);color:var(--pr)" onclick="checkout()">إتمام البيع</button></div>`:''}`;
 }
 function R2(){const p=$('#qs').selectionStart;R();const e=$('#qs');e.focus();e.setSelectionRange(p,p)}

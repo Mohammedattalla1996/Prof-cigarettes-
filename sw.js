@@ -1,4 +1,4 @@
-const C='pc-v13',F=['./manifest.webmanifest','./icon-180.png','./icon-192.png','./icon-512.png'];
+const C='pc-v14',F=['./manifest.webmanifest','./icon-180.png','./icon-192.png','./icon-512.png'];
 const clean=r=>r.redirected?r.blob().then(b=>new Response(b,{status:200,headers:r.headers})):r;
 self.addEventListener('install',e=>{e.waitUntil((async()=>{
  const c=await caches.open(C);
