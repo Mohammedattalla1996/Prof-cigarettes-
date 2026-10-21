@@ -44,6 +44,7 @@ h3{margin:12px 0 4px}
 .it img,.it .ph{pointer-events:none;-webkit-touch-callout:none}
 .kd{min-height:56px;border:1px solid var(--bd);border-radius:12px;background:var(--card);font-size:32px;text-align:center;line-height:56px;margin:6px 0;direction:ltr;color:var(--tx)}.kd:empty::before{content:attr(data-ph);color:var(--mu);font-size:16px}
 .kg{direction:ltr;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:8px 0}.kg button{padding:16px 0;font-size:26px;border:1px solid var(--bd);border-radius:12px;background:var(--card);color:var(--tx)}.kg button:active{background:var(--bd)}
+#cartfab{display:none!important}
 #prn{display:none}
 @media print{body>*:not(#prn){display:none!important}#prn{display:block!important;direction:rtl;color:#000;background:#fff;font-size:12px;font-family:-apple-system,'Segoe UI',Tahoma,sans-serif}body{background:#fff!important;padding:0!important}:root{padding:0!important}#prn table{width:100%;border-collapse:collapse;margin:6px 0}#prn th,#prn td{border:1px solid #444;padding:4px;text-align:right;color:#000}#prn th{background:#eee}.pb{page-break-inside:avoid;margin-bottom:14px}}
 </style>
@@ -78,7 +79,7 @@ const unit=i=>i.u==='g'?'غ':i.u==='ml'?'مل':'قطعة';
 const sv=k=>db.items.reduce((s,i)=>s+(i[k]||0)*i.qty,0);
 const stk=i=>i.u==='g'&&i.qty>=1000?(i.qty/1000).toFixed(2)+' كغ':i.qty+' '+unit(i);
 let _cb=null;
-function ov2(h){$('#md2').innerHTML=h;$('#ov2').style.display='flex'}
+function ov2(h){$('#md2').innerHTML=h;$('#md2').style.cssText='';$('#ov2').style.alignItems='';$('#ov2').style.justifyContent='';$('#ov2').style.display='flex'}
 function cl2(){$('#ov2').style.display='none'}
 function ask(m,fn){_cb=fn;ov2(`<h3>${esc(m)}</h3><div class="row"><button class="btn" style="flex:1" onclick="cl2();_cb&&_cb()">نعم</button><button class="btn g" style="flex:1" onclick="cl2()">إلغاء</button></div>`)}
 let kp='',kpFn=null;
@@ -94,7 +95,7 @@ function R(){
  $('#dt').textContent=new Date().toLocaleDateString('ar-EG',{weekday:'long',day:'numeric',month:'long'})+(offOK?' · 🟢 أوفلاين جاهز':' · ⚪ أوفلاين غير جاهز');
  $('#bal').innerHTML=role==='admin'?'<a onclick="balView()" style="cursor:pointer"><small>الرصيد ›</small><br>'+f(cashBal())+'</a> <button class="btn g s" onclick="menu()">⚙</button>':'<button class="btn g s" onclick="logout()">خروج</button>';
  $('#nv').innerHTML=TABS.filter(t=>role==='admin'||(t[0]!=='sup'&&t[0]!=='rep'&&t[0]!=='exp')).map(t=>`<button class="${tab===t[0]?'on':''}" onclick="tab='${t[0]}';R()"><b>${t[1]}</b>${t[2]}</button>`).join('');
- $('#m').innerHTML=({sell:vSell,stock:vStock,cust:vCust,sup:vSup,exp:vExp,rep:vRep})[tab]();
+ $('#m').innerHTML=({sell:vSell2,stock:vStock,cust:vCust,sup:vSup,exp:vExp,rep:vRep})[tab]();
  $('#cartfab').style.display=tab==='sell'?'block':'none';const cb=$('#cbd');cb.textContent=cart.length;cb.style.display=cart.length?'block':'none';
  if(cartOpen)cartView();
 }
@@ -259,6 +260,79 @@ function doExp(){const st=ec===3||ec===4,v=+$('#e2').value,note=$('#e4').value.t
  if(st){const i=find('items',$('#e1').value);if(!i)return alert('اختر صنفاً');i.qty=Math.max(0,Math.round((i.qty-v)*100)/100);db.exps.unshift({id:uid(),d:Date.now(),cat:CATS[ec],a:Math.round((i.cost||0)*v*100)/100,m:null,item:i.id,iname:i.name,q:v,note})}
  else db.exps.unshift({id:uid(),d:Date.now(),cat:CATS[ec],a:v,m:$('#e3').value,note});save();cl();R()}
 function delExp(id){const e=db.exps.find(x=>x.id===id);if(!e)return;ask('حذف المصروف؟',()=>{if(e.item){const i=find('items',e.item);if(i)i.qty+=e.q}db.exps=db.exps.filter(x=>x.id!==id);save();R()})}
+/* ---------- شاشة تأكيد العملية (مع البصمة) ---------- */
+function confirmOp(title,lines,fn){_cb=fn;
+ ov2(`<h3 style="text-align:center;margin-top:0">تأكيد العملية الحالية</h3><div class="card" style="margin:6px 0"><b>${esc(title)}</b>${lines.map(l=>`<div class="row sp" style="margin-top:6px;align-items:flex-start"><span class="mu">${esc(l[0])}</span><b style="text-align:left">${l[1]}</b></div>`).join('')}</div><div class="row"><button class="btn" style="flex:1" onclick="cl2();_cb&&_cb()">✓ تأكيد</button><button class="btn g" style="flex:1" onclick="cl2()">إلغاء</button></div><div class="mu" style="text-align:center;margin-top:12px;border-top:1px solid var(--bd);padding-top:8px">م.محمد عطالله<br><span dir="ltr">0567670022</span></div>`);
+ $('#ov2').style.alignItems='center';$('#ov2').style.justifyContent='center';$('#md2').style.cssText='width:90%;max-width:360px;border-radius:18px;max-height:85%'}
+function guard(n,sum){const o=window[n];window[n]=function(...a){const r=sum(...a);if(!r)return o.apply(this,a);confirmOp(r[0],r[1],()=>o.apply(this,a))}}
+const nmI=id=>(find('items',id)||{}).name||'';
+const sgn=v=>(v>0?'+':'')+f(v);
+guard('confirmSale',()=>{const cn=()=>{if(sel==='new')return nnm.trim()||null;const c=sel&&find('custs',sel);return c?c.name:null};
+ if(mode==='later'&&dtype==='amount'){const a=+damt,n=cn();if(!(a>0)||cart.length||!n)return null;return['دين مبلغ فقط',[['الزبون',esc(n)],['المبلغ',f(a)],['ملاحظة',esc(nte.trim()||'—')],['المخزون','لا يتأثر']]]}
+ if(!cart.length)return null;const tot=ctotal(),dv=Math.min(tot,Math.max(0,+dsc||0)),net=tot-dv,names=cart.map(l=>l.r?'سجائر لف ×'+l.n:nmI(l.id)+(l.f?' - '+l.f:'')+' ×'+l.q);
+ const L=[['الأصناف',esc(names.slice(0,4).join('، ')+(names.length>4?' ...':''))],['عدد البنود',cart.length],['الإجمالي',f(tot)]];if(dv)L.push(['الخصم','-'+f(dv)]);L.push(['المطلوب',f(net)]);
+ if(mode==='later'){const n=cn();if(!n)return null;L.push(['النوع','بيع بدين (تُخصم البضاعة من المخزون)'],['الزبون',esc(n)])}
+ else{L.push(['طريقة الدفع',pm]);if(pcs&&+pam>0){const c=find('custs',pcs);if(c)L.push(['سداد دين مع العملية',esc(c.name)+' — '+f(Math.min(+pam,debt(c)))])}}
+ return[mode==='later'?'بيع بدين':'بيع فوري',L]});
+guard('dgCash',id=>{const a=+($('#dg1')||{}).value;if(!(a>0))return null;const c=find('custs',id);return['دين نقدي على زبون',[['الزبون',esc(c.name)],['المبلغ',f(a)],['الرصيد قبل',f(debt(c))],['الرصيد بعد',f(debt(c)+a)],['المخزون','لا يتأثر']]]});
+guard('dgSet',id=>{const nv=parseFloat(($('#dg1')||{}).value);if(isNaN(nv))return null;const c=find('custs',id),d=nv-debt(c);return['تعديل رصيد زبون',[['الزبون',esc(c.name)],['الرصيد الحالي',f(debt(c))],['الرصيد الجديد',f(nv)],['الفرق',sgn(Math.round(d*100)/100)],['رصيد الكاش','لا يتأثر']]]});
+guard('dgConfirm',cid=>{if(!dl.length)return null;const c=find('custs',cid),tot=dl.reduce((a,l)=>{const i=find('items',l.id);return a+(i?i.sell*l.q:0)},0),names=dl.map(l=>nmI(l.id)+(l.f?' - '+l.f:'')+' ×'+l.q);return['دين بضاعة على زبون',[['الزبون',esc(c.name)],['الأصناف',esc(names.slice(0,4).join('، ')+(names.length>4?' ...':''))],['الإجمالي',f(tot)],['الرصيد بعد',f(debt(c)+tot)],['المخزون','تُخصم الكميات']]]});
+guard('cmov',(id,t)=>{const a=+($('#ca')||{}).value;if(!(a>0))return null;const c=find('custs',id),p=t==='pay';return[p?'دفعة من زبون':'إضافة دين',[['الزبون',esc(c.name)],['المبلغ',f(a)]].concat(p?[['طريقة الدفع',esc($('#cm').value)]]:[]).concat([['الرصيد بعد',f(debt(c)+(p?-a:a))]])]});
+guard('doSpay',id=>{const a=+($('#p1')||{}).value;if(!(a>0))return null;const x=find('sups',id);return['دفعة للمورد',[['المورد',esc(x.name)],['المبلغ',f(a)],['طريقة الدفع',esc($('#p2').value)],['المتبقي بعدها',f(sDebt(x)-a)]]]});
+guard('doBuy',()=>{const q=+$('#b4').value,t=+$('#b5').value;if(!(q>0)||!(t>0))return null;const sid=$('#b7').value,pd=$('#b9').value===''?t:+$('#b9').value;if(!sid&&pd<t)return null;const id=$('#b0').value,nm=id==='new'?$('#b1').value.trim():nmI(id);if(!nm)return null;const x=sid?find('sups',sid):null;
+ return['استلام بضاعة / شراء',[['الصنف',esc(nm)],['الكمية',q],['إجمالي السعر',f(t)],['المدفوع الآن',f(pd)+' ('+esc($('#b6').value)+')'],['المتبقي ديناً',f(Math.max(0,t-pd))],['المورد',x?esc(x.name):'غير معروف']]]});
+guard('doExp',()=>{const st=ec===3||ec===4,v=+$('#e2').value;if(!(v>0))return null;const L=[['الفئة',esc(CATS[ec])],[st?'الكمية':'المبلغ',st?v:f(v)]];if(st){const i=find('items',$('#e1').value);if(!i)return null;L.unshift(['الصنف',esc(i.name)]);L.push(['الخصم من','المخزون (بسعر الجملة)'])}else L.push(['من رصيد',esc($('#e3').value)]);return['مصروف',L]});
+guard('doAdj',m=>{const nv=parseFloat(($('#aj1')||{}).value);if(isNaN(nv))return null;const b=curM(m),d=Math.round((nv-b)*100)/100;return['تعديل رصيد '+m,[['الرصيد الحالي',f(b)],['الرصيد الجديد',f(nv)],['الفرق',sgn(d)],['السبب',esc($('#aj2').value.trim()||'—')]]]});
+guard('addBottles',id=>{const i=find('items',id);let n=$('#k1').value;if(n==='__new')n=$('#k4').value.trim();const c=+$('#k2').value,sz=+$('#k3').value,pc=+$('#k5').value;if(!n||!(c>0)||!(sz>0))return null;const L=[['الصنف',esc(i.name)],['الطعم',esc(n)],['عدد العلب',c],['حجم العلبة',sz+' مل'],['إجمالي الكمية',(c*sz)+' مل']];if(pc>0)L.push(['سعر الشراء',f(pc*c)]);return['إضافة علب للمخزون',L]});
+/* ---------- إضافة دين / تعديل رصيد الزبون (نقدي أو بضاعة) ---------- */
+let dl=[],dgt='cash',dsq='',dgn='';
+function dgOpts(){return `<option value="">— اختر صنفاً من المخزون —</option>${db.items.filter(i=>has(i.name,dsq)).map(i=>`<option value="${i.id}">${esc(i.name)} — ${f(i.sell)}${i.u==='g'?'/غ':i.u==='ml'?'/مل':''} (${stk(i)})</option>`).join('')}`}
+function dgFill(){const e=$('#dsel');if(e)e.innerHTML=dgOpts()}
+function dgAdd(id,q,fl){const l=dl.find(x=>x.id===id&&x.f===fl);if(l)l.q+=q;else dl.push(fl?{id,f:fl,q}:{id,q})}
+function dgPick(cid,iid){if(!iid)return;const e=$('#dsel');if(e)e.value='';dsq='';const i=find('items',iid);
+ if(i.u==='ml')return dgMl(cid,iid);
+ if(i.u==='g'){inp(i.name+' — '+f(i.sell)+' / غرام',0,v=>{if(v>0){dgAdd(iid,v);debtForm(cid)}});return}
+ dgAdd(iid,1);debtForm(cid)}
+function dgMl(cid,iid){const i=find('items',iid),fl=(i.fl||[]).filter(x=>x.q>0);if(!fl.length)return alert('لا توجد أطعم متوفرة');
+ ov2(`<h3>${esc(i.name)}</h3><select id="dm1">${fl.map(x=>`<option value="${esc(x.n)}">${esc(x.n)} (${x.q} مل)</option>`).join('')}</select><input id="dm2" type="number" inputmode="decimal" placeholder="الكمية بالمل"><div class="row" style="margin-top:8px"><button class="btn" style="flex:1" onclick="const v=+$('#dm2').value;if(!(v>0))return alert('أدخل الكمية');dgAdd('${iid}',v,$('#dm1').value);cl2();debtForm('${cid}')">إضافة</button><button class="btn g" onclick="cl2()">إلغاء</button></div>`)}
+function dgq(cid,k,d){dl[k].q+=d;if(dl[k].q<=0)dl.splice(k,1);debtForm(cid)}
+function dgset(cid,k,v){v=parseFloat(v);if(!(v>0))dl.splice(k,1);else dl[k].q=v;debtForm(cid)}
+function debtForm(id,t){if(t){dgt=t;dl=[];dsq='';dgn=''}const c=find('custs',id),tot=dl.reduce((a,l)=>{const i=find('items',l.id);return a+(i?i.sell*l.q:0)},0);
+ const goods=`<input id="dsq" placeholder="🔍 ابحث عن صنف" value="${esc(dsq)}" oninput="dsq=this.value;dgFill()"><select id="dsel" onchange="dgPick('${id}',this.value)">${dgOpts()}</select>${dl.map((l,k)=>{const i=find('items',l.id);if(!i)return'';return `<div class="card row sp"><div style="flex:1"><b>${esc(i.name)}${l.f?' - '+esc(l.f):''}</b><div class="mu">${f(i.sell)} × ${l.q}${i.u!=='p'?' '+unit(i):''} = ${f(i.sell*l.q)}</div></div>${i.u!=='p'?`<input type="number" inputmode="decimal" style="width:80px" value="${l.q}" onchange="dgset('${id}',${k},this.value)">`:`<button class="btn g s" onclick="dgq('${id}',${k},-1)">−</button><b>${l.q}</b><button class="btn g s" onclick="dgq('${id}',${k},1)">+</button>`}<button class="btn g s" onclick="dgset('${id}',${k},0)">✕</button></div>`}).join('')}<div class="row sp"><b>الإجمالي</b><b>${f(tot)}</b></div><input placeholder="ملاحظة (اختياري)" value="${esc(dgn)}" oninput="dgn=this.value"><div class="mu">تُخصم الكمية من المخزون وتُسجَّل فاتورة آجلة على الزبون.</div><button class="btn" style="width:100%;margin-top:8px" onclick="dgConfirm('${id}')">تسجيل دين بضاعة — ${f(tot)}</button>`;
+ const cash=`<input id="dg1" type="number" inputmode="decimal" placeholder="مبلغ الدين النقدي"><input id="dg2" placeholder="ملاحظة (اختياري)"><div class="mu">لا يخصم من المخزون ولا يدخل في المبيعات.</div><button class="btn" style="width:100%;margin-top:8px" onclick="dgCash('${id}')">تسجيل الدين</button>`;
+ const set=`<input id="dg1" type="number" inputmode="decimal" placeholder="الرصيد الجديد (الدين على الزبون)"><input id="dg2" placeholder="سبب التعديل (اختياري)"><div class="mu">لا يغيّر رصيد الكاش، ويظهر في أرشيف الزبون.</div><button class="btn" style="width:100%;margin-top:8px" onclick="dgSet('${id}')">حفظ التعديل</button>`;
+ md(`<h3 style="margin-top:0">${esc(c.name)} — الرصيد ${f(debt(c))}</h3><div class="pm"><button class="${dgt==='set'?'on':''}" onclick="debtForm('${id}','set')">تعديل الرصيد</button><button class="${dgt==='cash'?'on':''}" onclick="debtForm('${id}','cash')">دين نقدي</button><button class="${dgt==='goods'?'on':''}" onclick="debtForm('${id}','goods')">دين بضاعة</button></div>${dgt==='goods'?goods:dgt==='cash'?cash:set}<button class="btn g" style="width:100%;margin-top:8px" onclick="custView('${id}')">رجوع</button>`)}
+function dgCash(id){const a=+$('#dg1').value;if(!(a>0))return alert('أدخل مبلغاً صحيحاً');find('custs',id).log.unshift({id:uid(),d:Date.now(),t:'debt',a,note:$('#dg2').value.trim()||'دين نقدي',by:me});save();R();custView(id)}
+function dgSet(id){const c=find('custs',id),nv=parseFloat($('#dg1').value);if(isNaN(nv))return alert('أدخل الرصيد الجديد');const d=Math.round((nv-debt(c))*100)/100;if(d)c.log.unshift({id:uid(),d:Date.now(),t:'adj',a:d,note:'تعديل رصيد'+($('#dg2').value.trim()?' - '+$('#dg2').value.trim():''),by:me});save();R();custView(id)}
+function dgConfirm(cid){if(!dl.length)return alert('أضف أصنافاً أولاً');const old=cart;cart=dl;const bad=stockBad();cart=old;
+ const go=()=>{const sv={cart,mode,sel,dsc,nte,pcs,pam,csq,nnm,npn,damt,isq};cart=dl.map(l=>({...l}));mode='later';sel=cid;dsc='';nte=dgn;pcs='';pam='';done();({cart,mode,sel,dsc,nte,pcs,pam,csq,nnm,npn,damt,isq}=sv);dl=[];dgn='';custView(cid)};
+ if(bad)ask('الكمية أكبر من المتوفر لبعض الأصناف. المتابعة؟',go);else go()}
+/* ---------- واجهة البيع السريعة ---------- */
+let isq='',dtype='goods',damt='',nte='',nnm='',npn='';
+function resetSale(){cart=[];dsc='';pcs='';pam='';sel='';csq='';nte='';nnm='';npn='';damt='';isq=''}
+const stockBad=()=>cart.find(l=>{const i=find('items',l.r?l.tid:l.id);return !i||(l.r?i.qty<l.n*l.g:(l.f&&i.fl?(i.fl.find(x=>x.n===l.f)||{q:0}).q:i.qty)<l.q)});
+function iOpts(){return `<option value="">— اختر صنفاً من القائمة —</option>${db.items.filter(i=>has(i.name,isq)).map(i=>`<option value="${i.id}">${esc(i.name)} — ${f(i.sell)}${i.u==='g'?'/غ':i.u==='ml'?'/مل':''} (${stk(i)})</option>`).join('')}`}
+function fillIsel(){const e=$('#isel');if(e)e.innerHTML=iOpts()}
+function pickItem(id){if(!id)return;const e=$('#isel');if(e)e.value='';isq='';add(id)}
+function cartLines(){return cart.map((l,k)=>{
+ if(l.r)return `<div class="card row sp"><div style="flex:1"><b>🚬 سجائر لف (${l.pp})</b><div class="mu">${esc(l.tn)} · ${f(l.pr)} × ${l.n} = ${f(l.pr*l.n)}</div></div><button class="btn g s" onclick="setr(${k},${l.n-1})">−</button><b>${l.n}</b><button class="btn g s" onclick="setr(${k},${l.n+1})">+</button></div>`;
+ const i=find('items',l.id);if(!i)return'';
+ return `<div class="card row sp"><div style="flex:1"><b>${esc(i.name)}${l.f?' - '+esc(l.f):''}</b><div class="mu">${f(i.sell)} × ${l.q}${i.u!=='p'?' '+unit(i):''} = ${f(i.sell*l.q)}</div></div>${i.u!=='p'?`<input type="number" inputmode="decimal" style="width:80px" value="${l.q}" onchange="setq(${k},this.value)">`:`<button class="btn g s" onclick="setq(${k},${l.q-1})">−</button><b>${l.q}</b><button class="btn g s" onclick="setq(${k},${l.q+1})">+</button>`}<button class="btn g s" onclick="setq(${k},0)">✕</button></div>`}).join('')}
+function vSell2(){const favs=db.items.filter(i=>i.fav),tot=ctotal(),net=Math.max(0,tot-(+dsc||0)),amt=mode==='later'&&dtype==='amount';
+ return `<input id="isq" placeholder="🔍 ابحث عن صنف" value="${esc(isq)}" oninput="isq=this.value;fillIsel()"><select id="isel" onchange="pickItem(this.value)">${iOpts()}</select>
+ <div class="chips">${favs.map(i=>`<button class="btn s" onclick="add('${i.id}')">⭐ ${esc(i.name)}</button>`).join('')}<button class="btn g s" onclick="rollForm()">🚬 سجائر لف</button></div>
+ ${cart.length?cartLines():'<p class="mu" style="text-align:center;margin:10px 0">اختر الأصناف من القائمة أعلاه</p>'}
+ <div class="card"><div class="row sp"><span>الإجمالي</span><b>${f(tot)}</b></div>
+ ${amt?'':`<input type="number" inputmode="decimal" placeholder="خصم من الإجمالي (اختياري)" value="${dsc}" oninput="dsc=this.value;$('#nt2').textContent=f(Math.max(0,ctotal()-(+dsc||0)))"><div class="row sp"><b>المطلوب</b><b id="nt2" style="font-size:22px">${f(net)}</b></div>`}
+ <div class="pm" style="margin-top:6px"><button class="${mode==='now'?'on':''}" onclick="mode='now';R()">دفع فوري</button><button class="${mode==='later'?'on':''}" onclick="mode='later';R()">دين على زبون</button></div>
+ ${mode==='now'?`<div class="pm" style="margin-top:6px">${METH.map(m=>`<button class="${pm===m?'on':''}" onclick="pm='${m}';R()">${m}</button>`).join('')}</div><select onchange="pcs=this.value;R()"><option value="">سداد دين زبون مع هذه العملية (اختياري)</option>${db.custs.filter(c=>debt(c)>0).map(c=>`<option value="${c.id}" ${pcs===c.id?'selected':''}>${esc(c.name)} (${f(debt(c))})</option>`).join('')}</select>${pcs?`<input type="number" inputmode="decimal" placeholder="مبلغ السداد (بنفس طريقة الدفع)" value="${pam}" oninput="pam=this.value">`:''}`
+ :`<div class="pm" style="margin-top:6px"><button class="${dtype==='goods'?'on':''}" onclick="dtype='goods';R()">دين بضاعة (تُخصم من المخزون)</button><button class="${dtype==='amount'?'on':''}" onclick="dtype='amount';R()">دين مبلغ فقط</button></div><input id="csq" placeholder="🔍 بحث عن زبون بالاسم أو الجوال" value="${esc(csq)}" oninput="csq=this.value;fillCs()"><select id="cs" onchange="sel=this.value;R()">${csAll()}</select>${sel==='new'?`<input id="nn" placeholder="اسم الزبون" value="${esc(nnm)}" oninput="nnm=this.value"><input id="np" placeholder="رقم الجوال" inputmode="tel" value="${esc(npn)}" oninput="npn=this.value">`:''}${amt?`<input type="number" inputmode="decimal" placeholder="مبلغ الدين" value="${damt}" oninput="damt=this.value"><div class="mu">دين المبلغ لا يخصم من المخزون ولا يدخل في المبيعات.</div>`:''}`}
+ <input id="nt" placeholder="ملاحظة (اختياري)" value="${esc(nte)}" oninput="nte=this.value">
+ <button class="btn" style="width:100%;margin-top:8px;font-size:18px;padding:14px" onclick="confirmSale()">${amt?'تسجيل الدين':mode==='later'?'تأكيد البيع (دين)':'تأكيد البيع'}${amt?'':' — '+f(net)}</button></div>`}
+function confirmSale(){if(mode==='later'&&dtype==='amount')return doDebtOnly();if(!cart.length)return alert('السلة فارغة، أضف أصنافاً أولاً');if(stockBad())ask('الكمية في السلة أكبر من المتوفر لبعض الأصناف. المتابعة؟',done);else done()}
+function doDebtOnly(){const a=+damt;if(!(a>0))return alert('أدخل مبلغ الدين');if(cart.length)return alert('السلة تحتوي أصنافاً. أفرغها أو اختر دين بضاعة');let c=null;
+ if(sel==='new'){const n=nnm.trim();if(!n)return alert('اكتب اسم الزبون');c={id:uid(),name:n,phone:npn.trim(),log:[]};db.custs.push(c)}else if(sel)c=find('custs',sel);else return alert('اختر زبوناً');
+ c.log.unshift({id:uid(),d:Date.now(),t:'debt',a,note:nte.trim()||'دين مبلغ',by:me});const nm=c.name;resetSale();save();toast('✓ سُجّل الدين على '+nm,1800);R()}
 /* ---------- السوائل (بالمل) ---------- */
 function mlForm(id){const i=find('items',id),fl=(i.fl||[]).filter(x=>x.q>0);if(!fl.length)return alert('لا توجد أطعم متوفرة لهذا الصنف');
  md(`<h3>${esc(i.name)} — ${f(i.sell)} / مل</h3><select id="m1">${fl.map(x=>`<option value="${esc(x.n)}">${esc(x.n)} (${x.q} مل)</option>`).join('')}</select><input id="m2" type="number" inputmode="decimal" placeholder="الكمية بالمل (سم³)" oninput="$('#m3').textContent='الإجمالي: '+f((+this.value||0)*${i.sell})"><div class="mu" id="m3"></div><div class="row" style="margin-top:8px"><button class="btn" style="flex:1" onclick="addMl('${id}')">إضافة للسلة</button><button class="btn g" onclick="cl()">إغلاق</button></div>`)}
@@ -311,7 +385,7 @@ function co(){
  <textarea id="nt" placeholder="ملاحظة (اختياري)" rows="2"></textarea>
  <div class="row" style="margin-top:8px"><button class="btn" style="flex:1" onclick="done()">تأكيد</button><button class="btn g" onclick="cl()">إلغاء</button></div>`)}
 function done(){
- const note=$('#nt').value.trim();let c=null;
+ const note=(($('#nt')||{value:nte}).value||'').trim();let c=null;
  if(mode==='later'){
   if(sel==='new'){const n=$('#nn').value.trim();if(!n)return alert('اكتب اسم الزبون');c={id:uid(),name:n,phone:$('#np').value.trim(),log:[]};db.custs.push(c)}
   else if(sel)c=find('custs',sel);else return alert('اختر زبوناً')}
@@ -321,7 +395,7 @@ function done(){
  db.sales.unshift(s);
  if(c)c.log.unshift({id:uid(),d:s.d,t:'debt',a:total,note:'فاتورة #'+s.no+(note?' - '+note:'')});
  if(mode==='now'&&pcs&&+pam>0){const pc=find('custs',pcs);if(pc)pc.log.unshift({id:uid(),d:s.d+1,t:'pay',a:Math.min(+pam,debt(pc)),m:pm,note:'سداد أثناء فاتورة #'+s.no})}
- cart=[];save();cl();R()}
+ resetSale();save();toast('✓ تم البيع',1500);cl();R()}
 /* ---------- المخزون ---------- */
 function vStock(){return `<input id="qst" placeholder="🔍 بحث في المخزون" value="${esc(qst)}" oninput="qst=this.value;sl('qst')">${role==='admin'?`<div class="card row sp"><span>قيمة المخزون الإجمالية (بسعر الجملة)</span><b>${f(sv('cost'))}</b></div>`:''}${role==='admin'?`<div class="row"><button class="btn" style="flex:1" onclick="itemForm()">＋ إضافة صنف</button><button class="btn g" style="flex:1" onclick="buyForm()">🛒 شراء مستعجل</button></div><button class="btn g" style="width:100%;margin:6px 0" onclick="printItems()">🖨️ أرشيف الأصناف (PDF)</button>`:''}
  ${db.items.filter(i=>has(i.name,qst)).map(i=>`<div class="card row" onclick="${role==='admin'?`itemForm('${i.id}')`:''}">${i.img?`<img class="th" src="${i.img}">`:'<div class="th">📦</div>'}<div style="flex:1"><b>${esc(i.name)}</b><div class="mu">بيع ${f(i.sell)}${i.u==='g'?' (للغرام)':i.u==='ml'?' (للمل)':''}</div>${i.u==='ml'?`<div class="mu">${(i.fl||[]).map(x=>esc(x.n)+': '+x.q+' مل').join(' · ')}</div>${role==='admin'?`<button class="btn g s" style="margin-top:4px" onclick="event.stopPropagation();bottlesForm('${i.id}')">＋ علب</button>`:''}`:''}</div><div class="${i.qty<=(i.min||0)?'bad':''}"><b>${stk(i)}</b>${role==='admin'?`<div><button class="btn g s" style="margin-top:4px" onclick="event.stopPropagation();itemArch('${i.id}')">📜 أرشيف</button></div>`:''}</div></div>`).join('')}`}
@@ -385,7 +459,7 @@ function custView(id){const c=find('custs',id);let run=debt(c);
  const rows=c.log.map(l=>{const r=run;run-=(l.t==='debt'||l.t==='adj'?l.a:-l.a);return `<div class="card row sp"><div><b class="${l.t==='debt'||(l.t==='adj'&&l.a>0)?'bad':'ok'}">${l.t==='debt'?'دين':l.t==='adj'?'تعديل رصيد':'دفعة'} ${f(l.a)}</b><div class="mu">${tm(l.d)}${l.note?' · '+esc(l.note):''}</div></div><span class="mu">الرصيد ${f(r)}</span></div>`}).join('');
  md(`<div class="row sp"><h3 style="margin:0">${esc(c.name)}</h3><b class="${debt(c)>0?'bad':'ok'}">${f(debt(c))}</b></div><div class="mu">${esc(c.phone)}</div>
  <button class="btn g s" style="margin:6px 0" onclick="printCust(0,'${id}')">🖨️ كشف الزبون PDF</button><input id="ca" type="number" inputmode="decimal" placeholder="المبلغ"><select id="cm">${METH.map(m=>`<option>${m}</option>`).join('')}</select><input id="cn" placeholder="ملاحظة (اختياري)">
- <div class="row"><button class="btn ok" style="flex:1;background:var(--ok);color:#fff" onclick="cmov('${id}','pay')">تسجيل دفعة</button>${role==='admin'?`<button class="btn r" style="flex:1" onclick="cmov('${id}','debt')">إضافة دين</button><button class="btn g" onclick="balEdit('${id}')">تعديل الرصيد</button>`:''}</div>
+ <div class="row"><button class="btn ok" style="flex:1;background:var(--ok);color:#fff" onclick="cmov('${id}','pay')">تسجيل دفعة</button>${role==='admin'?`<button class="btn r" style="flex:1" onclick="debtForm('${id}','cash')">إضافة دين</button><button class="btn g" onclick="debtForm('${id}','set')">تعديل الرصيد</button>`:''}</div>
  <h3>أرشيف المديونية</h3>${rows||'<p class="mu">لا توجد حركات</p>'}
  <div class="row">${role==='admin'?`<button class="btn g s" onclick="ask('حذف الزبون وأرشيفه؟',()=>{db.custs=db.custs.filter(x=>x.id!=='${id}');save();cl();R()})">حذف الزبون</button>`:''}<button class="btn g" style="flex:1" onclick="cl()">إغلاق</button></div>`)}
 function cmov(id,t){const a=+$('#ca').value;if(!a||a<=0)return alert('أدخل مبلغاً صحيحاً');find('custs',id).log.unshift({id:uid(),d:Date.now(),t,a,m:t==='pay'?$('#cm').value:undefined,note:$('#cn').value.trim()});save();R();custView(id)}
