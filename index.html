@@ -61,7 +61,7 @@ h3{margin:12px 0 4px}
 const $=s=>document.querySelector(s);
 const def=()=>({items:[],sups:[],custs:[],sales:[],n:0});
 let db;try{db=JSON.parse(localStorage.getItem('pc')||'')||def()}catch(e){db=def()}
-db.users=db.users||{admin:'admin123',user:'user123'};db.adj=db.adj||[];db.exps=db.exps||[];db.buys=db.buys||[];db.spays=db.spays||[];db.slog=db.slog||[];db.roll=db.roll||{g:0.4,lz:0,ot:0};db.accts=db.accts||[{u:'admin',p:(db.users&&db.users.admin)||'admin123',r:'admin'},{u:'user',p:(db.users&&db.users.user)||'user123',r:'user'}];
+db.users=db.users||{admin:'admin123',user:'user123'};db.adj=db.adj||[];db.exps=db.exps||[];db.buys=db.buys||[];db.spays=db.spays||[];db.slog=db.slog||[];db.sadj=db.sadj||[];db.roll=db.roll||{g:0.4,lz:0,ot:0};db.accts=db.accts||[{u:'admin',p:(db.users&&db.users.admin)||'admin123',r:'admin'},{u:'user',p:(db.users&&db.users.user)||'user123',r:'user'}];
 function save(){try{localStorage.setItem('pc',JSON.stringify(db))}catch(e){alert('المساحة ممتلئة، صدّر نسخة احتياطية واحذف صوراً')}}
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,5);
 const f=n=>(Math.round(n*100)/100)+' ₪';
@@ -123,7 +123,7 @@ let dk='c',dsel='',dm='b';
 const DM={b:'الدين القائم',n:'دين جديد',p:'السداد'},DL={c:'ديون الزبائن',s:'ديون الموردين'};
 function dEvents(kind,sel){const ev=[];
  if(kind==='c')db.custs.filter(c=>!sel||c.id===sel).forEach(c=>c.log.forEach(l=>ev.push({d:l.d,delta:(l.t==='debt'||l.t==='adj')?l.a:-l.a,k:l.t==='debt'?'n':l.t==='pay'?'p':'a'})));
- else db.sups.filter(x=>!sel||x.id===sel).forEach(x=>supRows(x).forEach(e=>ev.push({d:e.d,delta:e.delta,k:e.d===0?'a':e.t.startsWith('استلام')?'n':'p'})));
+ else db.sups.filter(x=>!sel||x.id===sel).forEach(x=>supRows(x).forEach(e=>ev.push({d:e.d,delta:e.delta,k:e.d===0||e.t.startsWith('تعديل')?'a':e.t.startsWith('استلام')?'n':'p'})));
  return ev}
 function dSeries(kind,sel,ds){const ev=dEvents(kind,sel),a0=new Date(ds[0]+'T00:00:00').getTime();let bal=ev.filter(e=>e.d<a0).reduce((t,e)=>t+e.delta,0);const by={};
  ev.filter(e=>e.d>=a0).forEach(e=>{const o=by[dstr(new Date(e.d))]=by[dstr(new Date(e.d))]||{n:0,p:0,a:0};if(e.k==='n')o.n+=e.delta;else if(e.k==='p')o.p-=e.delta;else o.a+=e.delta});
@@ -142,16 +142,16 @@ function dbtPrint(){ainit();const ds=dBetween(ar,at),rows=dSeries(dk,dsel,ds),va
  cl();doPrint(`<h2>Prof Cigarettes — منحنى ${DL[dk]}${nm?' — '+esc(nm):''}</h2><p>${DM[dm]} من ${ar} إلى ${at} · طُبع ${tm(Date.now())}</p>${chartSvg(ds,vals,col,'#555','#ccc')}${dbtBody()}<h3>الحركة اليومية</h3>${tbl}`)}
 /* ---------- التحليل والمنحنى ---------- */
 const kvt=r=>`<table class="rt">${r.map(x=>`<tr><td>${x[0]}</td><td><b>${x[1]}</b></td></tr>`).join('')}</table>`;
-const dz=()=>({sales:0,cost:0,debt:0,exp:0,cadj:0,uadj:0,sadj:0,n:0,pay:0,buy:0,spay:0});
+const dz=()=>({sales:0,cost:0,debt:0,exp:0,cadj:0,uadj:0,sadj:0,vadj:0,n:0,pay:0,buy:0,spay:0});
 function dayMap(){const m={},g=k=>m[k]=m[k]||dz(),K=t=>dstr(new Date(t));
  db.sales.forEach(x=>{const o=g(K(x.d));o.sales+=x.total;o.n++;o.cost+=x.lines.reduce((t,l)=>t+l.c*l.q,0);if(x.m==='دين')o.debt+=x.total});
  db.exps.forEach(e=>{g(K(e.d)).exp+=e.a});db.adj.forEach(j=>{g(K(j.d)).cadj+=j.delta});
  db.custs.forEach(c=>c.log.forEach(l=>{const o=g(K(l.d));if(l.t==='adj')o.uadj+=l.a;if(l.t==='pay')o.pay+=l.a}));
  (db.slog||[]).forEach(x=>{const it=find('items',x.item);g(K(x.d)).sadj+=x.delta*((it&&it.cost)||0)});
- db.buys.forEach(b=>{g(K(b.d)).buy+=b.total});db.spays.forEach(p=>{g(K(p.d)).spay+=p.a});return m}
+ db.buys.forEach(b=>{g(K(b.d)).buy+=b.total});db.spays.forEach(p=>{g(K(p.d)).spay+=p.a});(db.sadj||[]).forEach(j=>{g(K(j.d)).vadj+=j.delta});return m}
 const dget=(m,k)=>m[k]||dz();
 const ANA={s:'المبيعات',p:'الربح',d:'الدين (بيع آجل)',c:'تغيّر رأس المال'};
-const aVal=(o,k)=>k==='s'?o.sales:k==='p'?o.sales-o.cost:k==='d'?o.debt:o.sales-o.cost-o.exp+o.cadj+o.uadj+o.sadj;
+const aVal=(o,k)=>k==='s'?o.sales:k==='p'?o.sales-o.cost:k==='d'?o.debt:o.sales-o.cost-o.exp+o.cadj+o.uadj+o.sadj-(o.vadj||0);
 let ar='',at='',ad='',am='s',anaS=null;
 function ainit(){const n=new Date();if(!at)at=dstr(n);if(!ar)ar=dstr(new Date(n.getTime()-13*864e5));if(!ad)ad=dstr(n);if(at<ar)at=ar}
 function arr(n){const t=new Date();at=dstr(t);ar=dstr(new Date(t.getTime()-(n-1)*864e5));anaView()}
@@ -170,7 +170,7 @@ function anaBody(m){const o=dget(m,ad),pv=dstr(new Date(new Date(ad+'T12:00:00')
  cn=aVal(o,'c'),capNow=cashBal()+sv('cost')+db.custs.reduce((a,c)=>a+debt(c),0)-db.sups.reduce((a,x)=>a+sDebt(x),0),D=o.debt;
  return `<h3>المبيعات: ${ad} مقابل ${pv}</h3>${kvt([['مبيعات '+ad,f(S1)],['مبيعات '+pv,f(S0)],['الفرق',sg(S1-S0)],['نسبة التغيّر',pc(S1,S0)],['التحليل',vd(S1,S0)],['ربح '+ad,f(P1)],['ربح '+pv,f(P0)],['نسبة تغيّر الربح',pc(P1,P0)],['تحليل الربح',vd(P1,P0)]])}
  <h3>الربح مقابل الدين (${ad})</h3>${kvt([['إجمالي الربح',f(P1)],['الدين المضاف (بيع آجل)',f(D)],['نسبة الدين من المبيعات',S1>0?qn(D/S1*100)+'%':'—'],['التحصيل من الزبائن',f(o.pay)],['صافي تغيّر ديون الزبائن',sg(D+o.uadj-o.pay)],['الحكم',D===0?'<span class="ok">لا ديون جديدة</span>':D<=P1?'<span class="ok">▲ الدين أقل من الربح</span>':'<span class="bad">▼ الدين أكبر من الربح بمقدار '+f(D-P1)+'</span>']])}
- <h3>تأثير حركات ${ad} على رأس المال</h3>${kvt([['ربح المبيعات (بعد الخصم)',sg(P1)],['المصروفات (نقدية ومن المخزون)',sg(-o.exp)],['تعديلات رصيد الكاش',sg(o.cadj)],['تعديلات أرصدة الزبائن',sg(o.uadj)],['تعديلات المخزون اليدوية (بالجملة)',sg(o.sadj)],['الزيادة / النقص في رأس المال',`<span class="${cn>=0?'ok':'bad'}">${cn>=0?'▲':'▼'} ${sg(cn)}</span>`],['نسبة التغيّر من رأس المال الحالي',capNow>0?qn(cn/capNow*100)+'%':'—']])}
+ <h3>تأثير حركات ${ad} على رأس المال</h3>${kvt([['ربح المبيعات (بعد الخصم)',sg(P1)],['المصروفات (نقدية ومن المخزون)',sg(-o.exp)],['تعديلات رصيد الكاش',sg(o.cadj)],['تعديلات أرصدة الزبائن',sg(o.uadj)],['تعديلات أرصدة الموردين',sg(-(o.vadj||0))],['تعديلات المخزون اليدوية (بالجملة)',sg(o.sadj)],['الزيادة / النقص في رأس المال',`<span class="${cn>=0?'ok':'bad'}">${cn>=0?'▲':'▼'} ${sg(cn)}</span>`],['نسبة التغيّر من رأس المال الحالي',capNow>0?qn(cn/capNow*100)+'%':'—']])}
  <div class="mu">حركات لا تغيّر رأس المال (تحويل بين أصول): مشتريات الموردين ${f(o.buy)} · دفعات للموردين ${f(o.spay)} · تحصيل الزبائن ${f(o.pay)}.</div>
  <h3>رأس المال الحالي (تقديري)</h3>${kvt([['رصيد الكاش والمحافظ',f(cashBal())],['المخزون بسعر الجملة',f(sv('cost'))],['ديون الزبائن لك',f(db.custs.reduce((a,c)=>a+debt(c),0))],['ديون الموردين عليك',(db.sups.reduce((a,x)=>a+sDebt(x),0)?'-':'')+f(db.sups.reduce((a,x)=>a+sDebt(x),0))],['رأس المال',f(capNow)]])}`}
 function anaView(){ainit();const m=dayMap(),ds=dBetween(ar,at),k=am,vals=ds.map(d=>aVal(dget(m,d),k)),up=vals.length<2||vals[vals.length-1]>=vals[vals.length-2];anaS={ds,vals};
@@ -192,7 +192,7 @@ function debtPrint(){dinit();const ls=dSales(),g={};ls.forEach(x=>{const k=x.cus
  cl();doPrint(`<h2>Prof Cigarettes — كشف مبيعات الدين</h2><p>الفترة من ${dfm} إلى ${dto} · طُبع ${tm(Date.now())} · الإجمالي: <b>${f(tot)}</b></p><h3>الملخص</h3>${sm}${bl}`)}
 function supRows(s){const ev=[];if(s.open)ev.push({d:0,delta:s.open,t:'دين سابق (رصيد افتتاحي)',note:''});
  db.buys.filter(b=>b.supId===s.id).forEach(b=>{ev.push({d:b.d,delta:b.total,t:'استلام بضاعة: '+b.name+' × '+b.q,note:''});const p=b.paid==null?b.total:b.paid;if(p>0)ev.push({d:b.d+1,delta:-p,t:'دفع عند الاستلام',note:b.m})});
- db.spays.filter(p=>p.sid===s.id).forEach(p=>ev.push({d:p.d,delta:-p.a,t:'دفعة للمورد',note:p.m+(p.note?' - '+p.note:'')}));
+ db.spays.filter(p=>p.sid===s.id).forEach(p=>ev.push({d:p.d,delta:-p.a,t:'دفعة للمورد',note:p.m+(p.note?' - '+p.note:'')}));(db.sadj||[]).filter(a=>a.sid===s.id).forEach(a=>ev.push({d:a.d,delta:a.delta,t:'تعديل رصيد',note:a.note||''}));
  ev.sort((a,b)=>b.d-a.d);let run=sDebt(s);return ev.map(e=>{const after=run;run=Math.round((run-e.delta)*100)/100;return{...e,after}})}
 function supArchive(id){const s=find('sups',id),rows=supRows(s);
  md(`<div class="row sp"><h3 style="margin:0">📜 أرشيف ${esc(s.name)}</h3><b class="${sDebt(s)>0?'bad':'ok'}">${f(sDebt(s))}</b></div><div class="row" style="margin:6px 0"><button class="btn s" onclick="printSups('${id}')">🖨️ طباعة / PDF</button></div>${rows.map(e=>`<div class="card"><div class="row sp"><b class="${e.delta>0?'bad':'ok'}">${e.delta>0?'+':''}${f(e.delta)}</b><span class="mu">الرصيد بعدها ${f(e.after)}</span></div><div>${esc(e.t)}</div><div class="mu">${e.d?tm(e.d):'—'}${e.note?' · '+esc(e.note):''}</div></div>`).join('')||'<p class="mu">لا توجد حركات</p>'}<button class="btn g" style="width:100%" onclick="supView('${id}')">رجوع</button>`)}
@@ -284,6 +284,34 @@ guard('doBuy',()=>{const q=+$('#b4').value,t=+$('#b5').value;if(!(q>0)||!(t>0))r
 guard('doExp',()=>{const st=ec===3||ec===4,v=+$('#e2').value;if(!(v>0))return null;const L=[['الفئة',esc(CATS[ec])],[st?'الكمية':'المبلغ',st?v:f(v)]];if(st){const i=find('items',$('#e1').value);if(!i)return null;L.unshift(['الصنف',esc(i.name)]);L.push(['الخصم من','المخزون (بسعر الجملة)'])}else L.push(['من رصيد',esc($('#e3').value)]);return['مصروف',L]});
 guard('doAdj',m=>{const nv=parseFloat(($('#aj1')||{}).value);if(isNaN(nv))return null;const b=curM(m),d=Math.round((nv-b)*100)/100;return['تعديل رصيد '+m,[['الرصيد الحالي',f(b)],['الرصيد الجديد',f(nv)],['الفرق',sgn(d)],['السبب',esc($('#aj2').value.trim()||'—')]]]});
 guard('addBottles',id=>{const i=find('items',id);let n=$('#k1').value;if(n==='__new')n=$('#k4').value.trim();const c=+$('#k2').value,sz=+$('#k3').value,pc=+$('#k5').value;if(!n||!(c>0)||!(sz>0))return null;const L=[['الصنف',esc(i.name)],['الطعم',esc(n)],['عدد العلب',c],['حجم العلبة',sz+' مل'],['إجمالي الكمية',(c*sz)+' مل']];if(pc>0)L.push(['سعر الشراء',f(pc*c)]);return['إضافة علب للمخزون',L]});
+/* ---------- صفحة المورد: دفعة / بضاعة / تسوية الرصيد ---------- */
+let sgm='goods',sg={item:'new',q:'',name:'',u:'p',sell:'',fl:'',t:'',pd:'',m:'كاش',iq:''};
+function sgReset(){sg={item:'new',q:'',name:'',u:'p',sell:'',fl:'',t:'',pd:'',m:'كاش',iq:''}}
+function sgOpts(){return `<option value="new" ${sg.item==='new'?'selected':''}>＋ صنف جديد مرتبط بالمورد</option>${db.items.filter(i=>has(i.name,sg.iq)||i.id===sg.item).map(i=>`<option value="${i.id}" ${sg.item===i.id?'selected':''}>${esc(i.name)} (${stk(i)})</option>`).join('')}`}
+function sgFill(){const e=$('#sgs');if(e)e.innerHTML=sgOpts()}
+function sgRem(){const t=+sg.t||0,p=sg.pd===''?t:(+sg.pd||0),e=$('#sgr');if(e)e.textContent='المتبقي ديناً على المورد: '+f(Math.max(0,t-p))}
+function supForm2(id,m){if(m){sgm=m;sgReset()}const s=find('sups',id);
+ const it=sg.item==='new'?null:find('items',sg.item),u=it?it.u:sg.u,ml=u==='ml';
+ const pay=`<input id="p1" type="number" inputmode="decimal" placeholder="مبلغ الدفعة"><select id="p2">${METH.map(m=>`<option>${m}</option>`).join('')}</select><input id="p3" placeholder="ملاحظة (اختياري)"><div class="mu">تُخصم من رصيد الطريقة المختارة ومن المتبقي للمورد.</div><button class="btn" style="width:100%;margin-top:8px" onclick="doSpay('${id}')">تسجيل الدفعة</button>`;
+ const set=`<input id="sa1" type="number" inputmode="decimal" placeholder="الرصيد الجديد (المتبقي للمورد)"><input id="sa2" placeholder="سبب التعديل (اختياري)"><div class="mu">لا يغيّر رصيد الكاش، ويظهر في أرشيف المورد.</div><button class="btn" style="width:100%;margin-top:8px" onclick="supSet('${id}')">حفظ التعديل</button>`;
+ const goods=`<input id="sgq" placeholder="🔍 ابحث عن صنف" value="${esc(sg.iq)}" oninput="sg.iq=this.value;sgFill()"><select id="sgs" onchange="sg.item=this.value;supForm2('${id}')">${sgOpts()}</select>
+ ${it?'':`<div class="card"><div class="mu">صنف جديد يُربط بهذا المورد تلقائياً</div><input placeholder="اسم الصنف" value="${esc(sg.name)}" oninput="sg.name=this.value"><select onchange="sg.u=this.value;supForm2('${id}')"><option value="p" ${u==='p'?'selected':''}>يُباع بالقطعة</option><option value="g" ${u==='g'?'selected':''}>يُباع بالوزن (غرام)</option><option value="ml" ${u==='ml'?'selected':''}>سائل (يُباع بالمل)</option></select><input type="number" inputmode="decimal" placeholder="سعر البيع (للقطعة أو للغرام أو للمل)" value="${sg.sell}" oninput="sg.sell=this.value"></div>`}
+ ${ml?`<input list="fls" placeholder="الطعم" value="${esc(sg.fl)}" oninput="sg.fl=this.value"><datalist id="fls">${(it&&it.fl||[]).map(x=>`<option value="${esc(x.n)}">`).join('')}</datalist>`:''}
+ <input type="number" inputmode="decimal" placeholder="${ml?'الكمية بالمل (عدد العلب × حجمها)':u==='g'?'الكمية بالغرام':'الكمية (العدد)'}" value="${sg.q}" oninput="sg.q=this.value">
+ <input type="number" inputmode="decimal" placeholder="إجمالي سعر البضاعة" value="${sg.t}" oninput="sg.t=this.value;sgRem()">
+ <input type="number" inputmode="decimal" placeholder="المدفوع الآن (فارغ = كامل المبلغ)" value="${sg.pd}" oninput="sg.pd=this.value;sgRem()">
+ <select onchange="sg.m=this.value">${METH.map(m=>`<option ${sg.m===m?'selected':''}>${m}</option>`).join('')}</select><div class="mu" id="sgr">المتبقي ديناً على المورد: ${f(Math.max(0,(+sg.t||0)-(sg.pd===''?(+sg.t||0):(+sg.pd||0))))}</div><div class="mu">تُضاف الكمية للمخزون وتُربط بالمورد، ويُخصم المدفوع فقط من الرصيد.</div><button class="btn" style="width:100%;margin-top:8px" onclick="doSupBuy('${id}')">حفظ البضاعة</button>`;
+ md(`<h3 style="margin-top:0">${esc(s.name)} — المتبقي ${f(sDebt(s))}</h3><div class="pm"><button class="${sgm==='pay'?'on':''}" onclick="supForm2('${id}','pay')">إضافة دفعة</button><button class="${sgm==='goods'?'on':''}" onclick="supForm2('${id}','goods')">إضافة بضاعة</button><button class="${sgm==='set'?'on':''}" onclick="supForm2('${id}','set')">تعديل الرصيد</button></div>${sgm==='pay'?pay:sgm==='goods'?goods:set}<button class="btn g" style="width:100%;margin-top:8px" onclick="supView('${id}')">رجوع</button>`)}
+function doSupBuy(sid){const q=+sg.q,t=+sg.t,pd=sg.pd===''?t:+sg.pd;if(!(q>0)||!(t>0))return alert('أدخل الكمية وإجمالي السعر');if(!(pd>=0)||pd>t)return alert('المدفوع الآن يجب أن يكون بين 0 وإجمالي السعر');
+ let i=sg.item==='new'?null:find('items',sg.item);const u=i?i.u:sg.u,fl=(sg.fl||'').trim();if(!i&&!sg.name.trim())return alert('اكتب اسم الصنف الجديد');if(u==='ml'&&!fl)return alert('اكتب الطعم');
+ const uc=Math.round(t/q*10000)/10000;
+ if(!i){i={id:uid(),name:sg.name.trim(),u,sell:+sg.sell||0,cost:uc,qty:0,min:0,sup:sid,img:'',fav:false};if(u==='ml')i.fl=[];db.items.push(i)}
+ if(u==='ml'){i.fl=i.fl||[];let x=i.fl.find(y=>y.n===fl);if(!x){x={n:fl,q:0};i.fl.push(x)}x.q=Math.round((x.q+q)*100)/100;i.qty=Math.round(i.fl.reduce((a,y)=>a+y.q,0)*100)/100}else i.qty=Math.round((i.qty+q)*100)/100;
+ i.cost=uc;i.sup=sid;db.buys.unshift({id:uid(),d:Date.now(),name:i.name+(u==='ml'?' - '+fl:''),item:i.id,q,total:t,paid:pd,m:sg.m,sup:find('sups',sid).name,supId:sid});sgReset();save();R();supView(sid)}
+function supSet(id){const x=find('sups',id),nv=parseFloat($('#sa1').value);if(isNaN(nv))return alert('أدخل الرصيد الجديد');const d=Math.round((nv-sDebt(x))*100)/100;if(d)db.sadj.unshift({id:uid(),d:Date.now(),sid:id,delta:d,note:$('#sa2').value.trim()||'تعديل رصيد',by:me});save();R();supView(id)}
+guard('doSupBuy',sid=>{const q=+sg.q,t=+sg.t,pd=sg.pd===''?t:+sg.pd;if(!(q>0)||!(t>0)||!(pd>=0)||pd>t)return null;const i=sg.item==='new'?null:find('items',sg.item),u=i?i.u:sg.u,fl=(sg.fl||'').trim();if(!i&&!sg.name.trim())return null;if(u==='ml'&&!fl)return null;const x=find('sups',sid);
+ const L=[['المورد',esc(x.name)],['الصنف',esc(i?i.name:sg.name.trim())+(i?'':' (صنف جديد)')]];if(u==='ml')L.push(['الطعم',esc(fl)]);L.push(['الكمية',q+(u==='ml'?' مل':u==='g'?' غ':'')],['إجمالي السعر',f(t)],['المدفوع الآن',f(pd)+' ('+esc(sg.m)+')'],['المتبقي ديناً',f(t-pd)],['رصيد المورد بعدها',f(sDebt(x)+t-pd)]);return['إضافة بضاعة من مورد',L]});
+guard('supSet',id=>{const nv=parseFloat(($('#sa1')||{}).value);if(isNaN(nv))return null;const x=find('sups',id),d=Math.round((nv-sDebt(x))*100)/100;return['تعديل رصيد مورد',[['المورد',esc(x.name)],['الرصيد الحالي',f(sDebt(x))],['الرصيد الجديد',f(nv)],['الفرق',sgn(d)],['رصيد الكاش','لا يتأثر']]]});
 /* ---------- إضافة دين / تعديل رصيد الزبون (نقدي أو بضاعة) ---------- */
 let dl=[],dgt='cash',dsq='',dgn='';
 function dgOpts(){return `<option value="">— اختر صنفاً من المخزون —</option>${db.items.filter(i=>has(i.name,dsq)).map(i=>`<option value="${i.id}">${esc(i.name)} — ${f(i.sell)}${i.u==='g'?'/غ':i.u==='ml'?'/مل':''} (${stk(i)})</option>`).join('')}`}
@@ -420,7 +448,8 @@ function delI(id){ask('حذف الصنف نهائياً؟',()=>{db.items=db.item
 /* ---------- الموردين ---------- */
 const sGoods=id=>db.buys.filter(b=>b.supId===id).reduce((s,b)=>s+b.total,0);
 const sPaid=id=>db.buys.filter(b=>b.supId===id).reduce((s,b)=>s+(b.paid==null?b.total:b.paid),0)+db.spays.filter(p=>p.sid===id).reduce((s,p)=>s+p.a,0);
-const sDebt=s=>Math.round(((s.open||0)+sGoods(s.id)-sPaid(s.id))*100)/100;
+const sAdj=id=>(db.sadj||[]).filter(a=>a.sid===id).reduce((t,a)=>t+a.delta,0);
+const sDebt=s=>Math.round(((s.open||0)+sGoods(s.id)-sPaid(s.id)+sAdj(s.id))*100)/100;
 function vSup(){const tot=db.sups.reduce((s,x)=>s+sDebt(x),0);
  return `<div class="card row sp"><span>إجمالي ما عليّ للموردين</span><b class="bad">${f(tot)}</b></div><div class="row"><button class="btn" style="flex:1" onclick="supForm()">＋ مورد</button><button class="btn g" style="flex:1" onclick="buyForm()">🛒 استلام بضاعة</button></div><button class="btn g" style="width:100%;margin:6px 0" onclick="printSups()">🖨️ أرشيف الموردين (PDF)</button>
  ${db.sups.map(s=>`<div class="card row sp" onclick="supView('${s.id}')"><div><b>${esc(s.name)}</b><div class="mu">${esc(s.phone)} · ${db.items.filter(i=>i.sup===s.id).length} صنف</div></div><b class="${sDebt(s)>0?'bad':'ok'}">${f(sDebt(s))}</b></div>`).join('')||'<p class="mu">لا يوجد موردون</p>'}`}
@@ -429,11 +458,11 @@ function supForm(id){const s=id?find('sups',id):{name:'',phone:'',note:'',open:'
 function saveSup(id){const n=$('#s1').value.trim();if(!n)return alert('اكتب الاسم');const o={name:n,phone:$('#s2').value.trim(),note:$('#s3').value.trim(),open:+$('#s4').value||0};if(id)Object.assign(find('sups',id),o);else db.sups.push({id:uid(),...o});save();cl();R()}
 function supView(id){const s=find('sups',id),ev=[];
  db.buys.filter(b=>b.supId===id).forEach(b=>ev.push({d:b.d,h:`<b>بضاعة: ${esc(b.name)} × ${b.q}</b><div class="mu">قيمة ${f(b.total)} · دُفع عند الاستلام ${f(b.paid==null?b.total:b.paid)}</div>`}));
- db.spays.filter(p=>p.sid===id).forEach(p=>ev.push({d:p.d,h:`<b class="ok">دفعة ${f(p.a)}</b><div class="mu">${p.m}${p.note?' · '+esc(p.note):''}</div>`}));
+ (db.sadj||[]).filter(a=>a.sid===id).forEach(a=>ev.push({d:a.d,h:`<b>تعديل رصيد ${a.delta>0?'+':''}${f(a.delta)}</b><div class="mu">${esc(a.note||'')}</div>`}));db.spays.filter(p=>p.sid===id).forEach(p=>ev.push({d:p.d,h:`<b class="ok">دفعة ${f(p.a)}</b><div class="mu">${p.m}${p.note?' · '+esc(p.note):''}</div>`}));
  ev.sort((a,b)=>b.d-a.d);
  md(`<div class="row sp"><h3 style="margin:0">${esc(s.name)}</h3><b class="${sDebt(s)>0?'bad':'ok'}">${f(sDebt(s))}</b></div><div class="mu">${esc(s.phone)}</div>
  <div class="grid" style="margin-top:8px"><div class="card"><div class="mu">إجمالي البضاعة المستلمة</div><b>${f(sGoods(id))}</b></div><div class="card"><div class="mu">إجمالي المدفوع</div><b class="ok">${f(sPaid(id))}</b></div></div>${s.open?`<div class="mu">دين سابق مسجّل: ${f(s.open)}</div>`:''}
- <div class="row"><button class="btn" style="flex:1" onclick="supPay('${id}')">💸 تسجيل دفعة</button><button class="btn g" style="flex:1" onclick="supAudit('${id}')">📋 جرد البضاعة</button></div><button class="btn g" style="width:100%;margin:6px 0" onclick="supArchive('${id}')">📜 أرشيف الحركات (مع الرصيد) / طباعة</button>
+ <div class="row"><button class="btn" style="flex:1" onclick="supPay('${id}')">💸 تسجيل دفعة</button><button class="btn g" style="flex:1" onclick="supAudit('${id}')">📋 جرد البضاعة</button></div><button class="btn" style="width:100%;margin:6px 0" onclick="supForm2('${id}','goods')">✏️ تعديل الرصيد: دفعة / بضاعة / تسوية</button><button class="btn g" style="width:100%;margin:6px 0" onclick="supArchive('${id}')">📜 أرشيف الحركات (مع الرصيد) / طباعة</button>
  <h3>الأصناف المرتبطة</h3>${db.items.filter(i=>i.sup===id).map(i=>`<div class="mu">${esc(i.name)}: ${stk(i)}</div>`).join('')||'<p class="mu">لا توجد أصناف مرتبطة</p>'}
  <h3>الأرشيف</h3>${ev.map(e=>`<div class="card"><div class="mu">${tm(e.d)}</div>${e.h}</div>`).join('')||'<p class="mu">لا توجد حركات</p>'}
  <div class="row"><button class="btn g s" onclick="supForm('${id}')">تعديل المورد</button><button class="btn g" style="flex:1" onclick="cl()">إغلاق</button></div>`)}
@@ -478,7 +507,7 @@ async function expFile(img){const js=dump(img),name='prof-backup-'+new Date().to
  try{const file=new File([js],name,{type:'application/json'});if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:name});return}}catch(e){if(e&&e.name==='AbortError')return}
  try{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([js],{type:'application/json'}));a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1500)}catch(e){alert('تعذّر التصدير')}}
 function impFile(el){const fl=el.files[0];if(!fl)return;const r=new FileReader();r.onload=()=>impData(r.result);r.readAsText(fl)}
-function impData(t){try{const d=JSON.parse(t);if(!d.items||!d.sales)throw 0;ask('سيتم استبدال كل البيانات الحالية. متابعة؟',()=>{db=d;db.users=db.users||{admin:'admin123',user:'user123'};db.adj=db.adj||[];db.exps=db.exps||[];db.buys=db.buys||[];db.spays=db.spays||[];db.slog=db.slog||[];db.roll=db.roll||{g:0.4,lz:0,ot:0};db.accts=db.accts||[{u:'admin',p:(db.users&&db.users.admin)||'admin123',r:'admin'},{u:'user',p:(db.users&&db.users.user)||'user123',r:'user'}];save();cl();R()})}catch(e){alert('الملف أو النص غير صالح')}}
+function impData(t){try{const d=JSON.parse(t);if(!d.items||!d.sales)throw 0;ask('سيتم استبدال كل البيانات الحالية. متابعة؟',()=>{db=d;db.users=db.users||{admin:'admin123',user:'user123'};db.adj=db.adj||[];db.exps=db.exps||[];db.buys=db.buys||[];db.spays=db.spays||[];db.slog=db.slog||[];db.sadj=db.sadj||[];db.roll=db.roll||{g:0.4,lz:0,ot:0};db.accts=db.accts||[{u:'admin',p:(db.users&&db.users.admin)||'admin123',r:'admin'},{u:'user',p:(db.users&&db.users.user)||'user123',r:'user'}];save();cl();R()})}catch(e){alert('الملف أو النص غير صالح')}}
 function imp(){impData($('#bt').value)}
 function bk(){md(`<h3>نسخة احتياطية</h3><p class="mu">حجم البيانات الحالي ≈ ${Math.round(JSON.stringify(db).length/1024)} ك.ب. الصور هي الجزء الأكبر عادةً.</p><button class="btn" style="width:100%;margin:4px 0" onclick="expFile(true)">📤 تصدير كملف (مع الصور)</button><button class="btn g" style="width:100%;margin:4px 0" onclick="expFile(false)">📤 تصدير كملف بدون صور (أصغر)</button><div class="mu">تُفتح قائمة المشاركة: اختر حفظ في الملفات أو واتساب أو AirDrop.</div><h3>استيراد</h3><input type="file" onchange="impFile(this)"><div class="mu">اختر ملف النسخة الاحتياطية، وسيستبدل البيانات الحالية.</div><details style="margin-top:8px"><summary class="mu">استيراد من نص (للنسخ القديمة)</summary><textarea id="bt" rows="3" placeholder="الصق النص هنا"></textarea><button class="btn r" style="width:100%" onclick="imp()">استيراد من النص</button></details><button class="btn g" style="width:100%;margin-top:8px" onclick="cl()">إغلاق</button>`)}
 let offOK=false;if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').then(()=>navigator.serviceWorker.ready).then(()=>{offOK=true;R()}).catch(()=>{})}
